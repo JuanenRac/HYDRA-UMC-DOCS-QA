@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hydra-umc-docs-qa"
+version = "0.0.4"
+description = "RAG-based AI technical assistant for on-site hardware maintenance, grounded in the HYDRA-UMC ecosystem's own documentation, running on Hailo-10."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE.md" }
+authors = [
+    { name = "JuanenRac (Electro Hobby 3D)", email = "electrohobby3d@gmail.com" },
+]
+keywords = ["hydra-umc", "hailo-10", "rag", "vector-search", "docs-qa", "edge-ai"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.urls]
+Homepage = "https://github.com/JuanenRac/HYDRA-UMC-DOCS-QA"
+
+[project.scripts]
+hydra-umc-docs-qa = "hydra_umc_docs_qa.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
