@@ -24,6 +24,9 @@ Ha "letto" tutti i manuali, la documentazione degli schemi e il codice sorgente 
 
 ### Caratteristiche principali:
 * 🔍 **Ricerca vettoriale locale (v0):** Vero recupero lessicale TF-IDF, solo stdlib, su documenti Markdown locali. *(implementato come vera ricerca lessicale - non ancora ricerca semantica basata su embedding, e l'ingestione PDF resta lavoro futuro; vedi BUILD ED ESECUZIONE sotto)*
+* 🔒 **Vera lista consentiti dei documenti:** vengono ingeriti e citati solo i file `.md`/`.markdown` realmente esistenti - qualsiasi altro percorso `--docs` (mancante, o di un tipo di file non consentito) viene rifiutato con un motivo distinto e stampato, invece di essere ignorato silenziosamente o letto come se fosse documentazione reale. *(implementato)*
+* 🔗 **Citazioni tracciabili:** ogni risultato cita `source#index` - un puntatore stabile e univoco al passaggio esatto ingerito, recuperabile in modo deterministico rianalizzando la stessa fonte. *(implementato)*
+* 🎯 **Punteggio deterministico:** il ranking è una funzione pura del corpus e del testo della query, indipendente dal seed hash per processo dell'interprete. *(implementato)*
 * 🤖 **Ragionamento fondato:** Le risposte si basano rigorosamente sulla documentazione del progetto fornita.
 * 🎙️ **Integrazione vocale:** Integrato con VOICE-UI per il supporto alla manutenzione a mani libere.
 * 🛠️ **Consapevolezza del codice:** Può spiegare i moduli del firmware e le specifiche del protocollo CAN.
@@ -94,6 +97,30 @@ tre fratelli (VLA-Engine, Voice-UI, Semantic-Planner):
   ingerito riceve `No relevant passages found` (vedi `main.py`), mai una
   risposta inventata o allucinata travestita da vero risultato di
   recupero.
+* **Perché un percorso `--docs` non consentito viene rifiutato, non
+  ignorato o ingerito silenziosamente.** Un assistente QA che dovrebbe
+  essere "fondato sulla documentazione propria dell'ecosistema" non
+  deve leggere e citare silenziosamente qualsiasi file a cui punti chi
+  lo invoca - un percorso mancante o un file non Markdown (un `.env`
+  sperduto, un binario di firmware) riceve una riga reale e distinta
+  `REJECTED ... : <motivo>` (vedi `validate_doc_path` in `ingest.py`)
+  invece di un "nessun risultato trovato" aggregato che nasconde *il
+  perché*.
+* **Perché la similarità coseno ordina i termini condivisi prima di
+  sommarli.** `dict.keys() & dict.keys()` è un set, e l'ordine di
+  iterazione dei set in CPython dipende dalla randomizzazione
+  dell'hash delle stringhe per processo - sommare termini in virgola
+  mobile in quell'ordine farebbe dipendere un punteggio dal processo
+  che ha eseguito la query, non solo dal corpus e dal testo della
+  query. Ordinare prima rende il punteggio una funzione pura e
+  riproducibile dei suoi input reali.
+* **Perché le citazioni portano un `#index`, non solo un nome di
+  file.** Un semplice nome di file non può disambiguare due sezioni
+  che condividono un'intestazione (o, in futuro, due file ingeriti che
+  condividono un nome) - `DocChunk.index` è la posizione ordinale
+  reale di ciascun frammento all'interno della propria fonte, dando a
+  ogni citazione una chiave stabile che chi la usa può sfruttare per
+  recuperare di nuovo, in modo deterministico, lo stesso passaggio.
 
 ---
 
@@ -105,7 +132,7 @@ HYDRA-UMC-DOCS-QA/
 │   ├── ingest.py            # Ingestione Markdown reale -> DocChunk per intestazione
 │   ├── index.py              # Indice TF-IDF reale (solo stdlib) + ricerca per similarità coseno
 │   └── main.py                # Punto di ingresso + sottocomando reale `query`
-├── tests/                   # Test reali: ingestione, ranking, CLI end-to-end
+├── tests/                   # Test reali: ingestione, lista consentiti, ranking, determinismo, CLI end-to-end
 ├── docs/                    # Documentazione e manuali tecnici
 ├── images/                  # Media e diagrammi
 ├── scripts/                 # Script di utilità
@@ -164,6 +191,21 @@ run.bat query "cablaggio bus CAN" --top-k 3
 Una domanda le cui parole non si sovrappongono al corpus ingerito
 stampa un `No relevant passages found` onesto - v0 è vero recupero
 lessicale, non una risposta generativa.
+
+Ogni risultato cita `source#index` (es. `manual.md#1`) - un puntatore
+stabile e tracciabile a quel frammento esatto. Un percorso `--docs`
+mancante o non `.md`/`.markdown` viene rifiutato e segnalato, non
+ignorato silenziosamente:
+
+```text
+$ ./run.sh query "firmware flashing" --docs manual.md ghost.md secret.env
+REJECTED ghost.md: file not found (no source)
+REJECTED secret.env: disallowed extension .env - only .markdown, .md are ingested
+Top 1 passage(s) for: "firmware flashing"
+
+1. [0.289] manual.md#1 - Firmware Flashing
+   Flash URTC firmware over SWD or JTAG using URTC-FLASHER.
+```
 
 ### 🧪 Risoluzione dei problemi
 

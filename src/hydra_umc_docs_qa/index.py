@@ -71,7 +71,17 @@ def build_index(chunks: list[DocChunk]) -> TfidfIndex:
 def _cosine_similarity(a: dict[str, float], b: dict[str, float]) -> float:
     if not a or not b:
         return 0.0
-    shared = a.keys() & b.keys()
+    # `a.keys() & b.keys()` is a set, and CPython's set iteration order
+    # depends on string hash values, which are randomized per process by
+    # default (PYTHONHASHSEED). IEEE-754 float addition is not
+    # associative, so summing in a hash-seed-dependent order makes `dot` a
+    # function of which process happened to run the query, not just of
+    # the corpus and query text - a real determinism hole even where it
+    # doesn't happen to move the final ranking for a given corpus.
+    # Sorting the shared terms first removes that dependency outright:
+    # the summation order, and therefore the score, is now a pure
+    # function of the corpus and query alone.
+    shared = sorted(a.keys() & b.keys())
     dot = sum(a[term] * b[term] for term in shared)
     norm_a = math.sqrt(sum(weight * weight for weight in a.values()))
     norm_b = math.sqrt(sum(weight * weight for weight in b.values()))

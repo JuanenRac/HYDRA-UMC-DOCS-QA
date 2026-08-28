@@ -24,6 +24,9 @@ It has "read" all manuals, schematic documentation, and source code across the e
 
 ### Key Features:
 * 🔍 **Local Vector Search (v0):** Real, stdlib-only TF-IDF lexical retrieval over local Markdown docs. *(implemented as real lexical search - not yet embedding-based semantic search, and PDF ingestion is still future work; see BUILD & RUN below)*
+* 🔒 **Real document allowlist:** only existing `.md`/`.markdown` files are ever ingested and cited - every other `--docs` path (missing, or a disallowed file type) is rejected with a distinct, printed reason instead of being silently skipped or silently read as if it were real documentation. *(implemented)*
+* 🔗 **Traceable citations:** every result cites `source#index` - a stable, disambiguating pointer back to the exact ingested passage, deterministically recoverable by re-parsing the same source. *(implemented)*
+* 🎯 **Deterministic scoring:** ranking is a pure function of the corpus and query text, independent of the interpreter's per-process hash seed. *(implemented)*
 * 🤖 **Grounded Reasoning:** Answers are strictly based on the provided project documentation.
 * 🎙️ **Voice Integration:** Integrated with VOICE-UI for hands-free maintenance support.
 * 🛠️ **Code Awareness:** Can explain firmware modules and CAN protocol specifics.
@@ -90,6 +93,27 @@ service into `docker-compose.yml` alongside its three siblings
   overlap the ingested corpus gets `No relevant passages found`
   (see `main.py`), never a guessed or hallucinated response dressed up
   as a real retrieval result.
+* **Why a disallowed `--docs` path is rejected, not silently skipped or
+  silently ingested.** A QA assistant that's supposed to be "grounded in
+  the ecosystem's own documentation" must not quietly read and cite
+  whatever file a caller happens to point it at - a missing path or a
+  non-Markdown file (a stray `.env`, a firmware binary) gets a real,
+  distinct `REJECTED ... : <reason>` line (see `ingest.py`'s
+  `validate_doc_path`) instead of an aggregate "found nothing" that
+  hides *why*.
+* **Why cosine similarity sorts the shared terms before summing them.**
+  `dict.keys() & dict.keys()` is a set, and CPython's set iteration order
+  depends on per-process string hash randomization - summing
+  floating-point terms in that order would make a score depend on which
+  process happened to run the query, not only on the corpus and query
+  text. Sorting first makes the score a pure, reproducible function of
+  its real inputs.
+* **Why citations carry a `#index`, not just a filename.** A bare
+  filename can't disambiguate two sections sharing a heading (or, later,
+  two ingested files sharing a name) - `DocChunk.index` is each chunk's
+  real ordinal position within its own source, giving every citation a
+  stable key a caller can use to deterministically recover the exact
+  passage again.
 
 ---
 
@@ -101,7 +125,7 @@ HYDRA-UMC-DOCS-QA/
 │   ├── ingest.py            # Real Markdown ingestion -> heading-scoped DocChunks
 │   ├── index.py              # Real stdlib-only TF-IDF index + cosine-similarity search
 │   └── main.py                # Entry point + real `query` subcommand
-├── tests/                   # Real tests: ingestion, ranking, end-to-end CLI
+├── tests/                   # Real tests: ingestion, allowlist, ranking, determinism, end-to-end CLI
 ├── docs/                    # Documentation and technical manuals
 ├── images/                  # Media and diagrams
 ├── scripts/                 # Utility scripts
@@ -159,6 +183,20 @@ run.bat query "CAN bus wiring" --top-k 3
 A question whose words don't overlap the ingested corpus prints an
 honest `No relevant passages found` - v0 is real lexical retrieval, not
 a generative answer.
+
+Each result cites `source#index` (e.g. `manual.md#1`) - a stable,
+traceable pointer to that exact chunk. A `--docs` path that's missing or
+not `.md`/`.markdown` is rejected and reported, not silently ignored:
+
+```text
+$ ./run.sh query "firmware flashing" --docs manual.md ghost.md secret.env
+REJECTED ghost.md: file not found (no source)
+REJECTED secret.env: disallowed extension .env - only .markdown, .md are ingested
+Top 1 passage(s) for: "firmware flashing"
+
+1. [0.289] manual.md#1 - Firmware Flashing
+   Flash URTC firmware over SWD or JTAG using URTC-FLASHER.
+```
 
 ### 🩺 Troubleshooting
 

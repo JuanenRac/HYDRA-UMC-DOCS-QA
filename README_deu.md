@@ -24,6 +24,9 @@ Er hat alle Handbücher, Schaltdokumentationen und den Quellcode des gesamten Ö
 
 ### Hauptmerkmale:
 * 🔍 **Lokale Vektorsuche (v0):** Echtes, stdlib-basiertes TF-IDF-Lexik-Retrieval über lokale Markdown-Dokumente. *(implementiert als echte lexikalische Suche - noch keine embedding-basierte semantische Suche, PDF-Ingestion bleibt zukünftige Arbeit; siehe BUILD UND AUSFÜHRUNG unten)*
+* 🔒 **Echte Dokument-Positivliste:** Es werden ausschließlich existierende `.md`/`.markdown`-Dateien eingelesen und zitiert - jeder andere `--docs`-Pfad (fehlend oder ein nicht zulässiger Dateityp) wird mit einem eigenen, ausgegebenen Grund abgelehnt, statt stillschweigend übersprungen oder wie echte Dokumentation gelesen zu werden. *(implementiert)*
+* 🔗 **Nachvollziehbare Zitate:** Jedes Ergebnis zitiert `source#index` - einen stabilen, eindeutigen Verweis auf die exakte eingelesene Passage, deterministisch wiederherstellbar durch erneutes Parsen derselben Quelle. *(implementiert)*
+* 🎯 **Deterministisches Scoring:** Das Ranking ist eine reine Funktion von Korpus und Anfrage-Text, unabhängig vom Hash-Seed des jeweiligen Interpreter-Prozesses. *(implementiert)*
 * 🤖 **Fundiertes Denken:** Antworten basieren strikt auf der bereitgestellten Projektdokumentation.
 * 🎙️ **Sprachintegration:** Integriert in VOICE-UI für freihändige Wartungsunterstützung.
 * 🛠️ **Code-Bewusstsein:** Kann Firmware-Module und CAN-Protokoll-Spezifikatiön erläutern.
@@ -96,6 +99,32 @@ Voice-UI, Semantic-Planner) ein:
   überschneiden, erhält `No relevant passages found` (siehe
   `main.py`), niemals eine erfundene oder halluzinierte Antwort,
   getarnt als echtes Retrieval-Ergebnis.
+* **Warum ein nicht zulässiger `--docs`-Pfad abgelehnt wird, statt
+  stillschweigend übersprungen oder eingelesen zu werden.** Ein
+  QA-Assistent, der "auf der eigenen Dokumentation des Ökosystems
+  fundiert" sein soll, darf nicht stillschweigend jede Datei lesen und
+  zitieren, auf die ein Aufrufer zufällig zeigt - ein fehlender Pfad
+  oder eine Nicht-Markdown-Datei (eine verirrte `.env`, eine
+  Firmware-Binärdatei) erhält eine echte, eigene
+  `REJECTED ... : <Grund>`-Zeile (siehe `validate_doc_path` in
+  `ingest.py`) statt eines aggregierten "nichts gefunden", das
+  verbirgt, *warum*.
+* **Warum die Kosinus-Ähnlichkeit gemeinsame Terme vor der Summierung
+  sortiert.** `dict.keys() & dict.keys()` ist ein Set, und die
+  Iterationsreihenfolge von Sets in CPython hängt von der
+  prozessweiten Zufälligkeit des String-Hashings ab - würde man
+  Gleitkomma-Terme in dieser Reihenfolge summieren, hinge ein Score
+  davon ab, welcher Prozess die Anfrage zufällig ausgeführt hat, nicht
+  nur von Korpus und Anfrage-Text. Vorheriges Sortieren macht den
+  Score zu einer reinen, reproduzierbaren Funktion seiner
+  tatsächlichen Eingaben.
+* **Warum Zitate ein `#index` tragen, nicht nur einen Dateinamen.** Ein
+  bloßer Dateiname kann zwei Abschnitte mit gleicher Überschrift nicht
+  unterscheiden (oder später zwei eingelesene Dateien mit gleichem
+  Namen) - `DocChunk.index` ist die tatsächliche Ordinalposition jedes
+  Chunks innerhalb seiner eigenen Quelle und gibt jedem Zitat einen
+  stabilen Schlüssel, mit dem ein Aufrufer dieselbe Passage
+  deterministisch wiederfinden kann.
 
 ---
 
@@ -107,7 +136,7 @@ HYDRA-UMC-DOCS-QA/
 │   ├── ingest.py            # Echte Markdown-Ingestion -> DocChunks pro Überschrift
 │   ├── index.py              # Echter TF-IDF-Index (nur stdlib) + Kosinus-Ähnlichkeitssuche
 │   └── main.py                # Einstiegspunkt + echtes `query`-Subcommand
-├── tests/                   # Echte Tests: Ingestion, Ranking, End-to-End-CLI
+├── tests/                   # Echte Tests: Ingestion, Positivliste, Ranking, Determinismus, End-to-End-CLI
 ├── docs/                    # Dokumentation und technische Handbücher
 ├── images/                  # Medien und Diagramme
 ├── scripts/                 # Utility-Skripte
@@ -166,6 +195,21 @@ run.bat query "CAN-Bus-Verkabelung" --top-k 3
 Eine Frage, deren Wörter sich nicht mit dem eingelesenen Korpus
 überschneiden, gibt ein ehrliches `No relevant passages found` aus - v0
 ist echtes lexikalisches Retrieval, keine generative Antwort.
+
+Jedes Ergebnis zitiert `source#index` (z. B. `manual.md#1`) - ein
+stabiler, nachvollziehbarer Verweis auf genau diesen Chunk. Ein
+`--docs`-Pfad, der fehlt oder nicht `.md`/`.markdown` ist, wird
+abgelehnt und gemeldet, nicht stillschweigend ignoriert:
+
+```text
+$ ./run.sh query "firmware flashing" --docs manual.md ghost.md secret.env
+REJECTED ghost.md: file not found (no source)
+REJECTED secret.env: disallowed extension .env - only .markdown, .md are ingested
+Top 1 passage(s) for: "firmware flashing"
+
+1. [0.289] manual.md#1 - Firmware Flashing
+   Flash URTC firmware over SWD or JTAG using URTC-FLASHER.
+```
 
 ### 🧪 Fehlerbehebung
 

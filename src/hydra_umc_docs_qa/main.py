@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
-from .ingest import ingest_markdown_files
+from .ingest import ingest_allowed_markdown_files
 from .index import build_index, search
 
 PROJECT_NAME = "HYDRA-UMC-DOCS-QA"
@@ -42,7 +42,10 @@ def _print_identity() -> None:
 
 
 def _run_query(question: str, docs: list[Path], top_k: int) -> int:
-    chunks = ingest_markdown_files(docs)
+    chunks, rejected = ingest_allowed_markdown_files(docs)
+    for doc in rejected:
+        print(f"REJECTED {doc.describe()}")
+
     if not chunks:
         print("No documents ingested - check the --docs paths.")
         return 1
@@ -64,7 +67,7 @@ def _run_query(question: str, docs: list[Path], top_k: int) -> int:
         snippet = result.chunk.text.replace("\n", " ").strip()
         if len(snippet) > _SNIPPET_LEN:
             snippet = snippet[:_SNIPPET_LEN].rstrip() + "..."
-        print(f"{rank}. [{result.score:.3f}] {result.chunk.source} - {heading}")
+        print(f"{rank}. [{result.score:.3f}] {result.chunk.source}#{result.chunk.index} - {heading}")
         print(f"   {snippet}\n")
     return 0
 
