@@ -5,6 +5,8 @@
 # =============================================================================
 from __future__ import annotations
 
+import pytest
+
 from hydra_umc_docs_qa.index import build_index, search, tokenize
 from hydra_umc_docs_qa.ingest import DocChunk
 
@@ -63,3 +65,13 @@ def test_build_index_on_empty_chunks_does_not_crash() -> None:
     index = build_index([])
 
     assert search(index, "anything", top_k=5) == []
+
+
+def test_search_rejects_negative_top_k() -> None:
+    # Real, CLI-reachable edge case: results[:top_k] with a negative top_k
+    # would otherwise hit Python's negative-slice semantics (top_k=-1
+    # silently drops only the lowest-ranked result) instead of erroring.
+    index = build_index(_sample_chunks())
+
+    with pytest.raises(ValueError):
+        search(index, "CAN bus termination", top_k=-1)

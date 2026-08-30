@@ -134,3 +134,16 @@ def test_query_citation_includes_a_traceable_chunk_index(
     # The matching chunk is the 2nd (index 1) in the file - the citation
     # must carry that real ordinal, not just the ambiguous filename.
     assert "manual.md#1" in captured.out
+
+
+def test_query_rejects_a_negative_top_k_cleanly(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    doc = tmp_path / "manual.md"
+    doc.write_text("# CAN Bus Wiring\nTwisted pair CAN bus wiring.\n", encoding="utf-8")
+
+    exit_code = main(["query", "CAN bus wiring", "--docs", str(doc), "--top-k", "-1"])
+
+    captured = capsys.readouterr()
+    assert exit_code == 1
+    assert "ERROR" in captured.out

@@ -5,7 +5,22 @@ version number follows this ecosystem's "odometer" scheme: PATCH +1 on
 every real build, rolling into MINOR past 9 (`0.0.9` -> `0.1.0`); MAJOR is
 bumped manually only. See `bump_version.py`.
 
-## [Unreleased]
+## [0.0.6] - Rejected a negative --top-k instead of silently mis-slicing
+
+### Fixed
+- **`index.py`'s `search()`** - `results[:top_k]` had no guard against a
+  negative `top_k`; Python's own negative-slice semantics (e.g. `top_k=-1`)
+  silently returned all but the lowest-ranked result instead of erroring or
+  returning nothing - a real, CLI-reachable edge case (`query "..." --top-k
+  -1`), not just a defensive concern. `search()` now raises `ValueError` for
+  `top_k < 0`, and `main.py`'s `query` subcommand catches it and reports a
+  clean `ERROR: ...` line (exit 1) instead of letting the wrong results
+  print silently. 2 new tests (`test_index.py`, `test_cli.py`) = 29 total.
+- Markdown supplied through the CLI allowlist is now bounded to 4 MiB before
+  it is read. Oversized inputs receive a distinct rejection reason, preserving
+  the query's honest citation boundary without unbounded local file reads.
+- Removed an exact project-count reference from the technical overview.
+
 ### Added
 - Copyright/license header on every source file and build/run script.
 - `CHANGELOG.md` (this file).
@@ -17,12 +32,6 @@ bumped manually only. See `bump_version.py`.
 - Inline comments explaining the *why* behind non-obvious decisions
   (versioning scheme, src-layout, why this child has no hardware/
   firmware/os/models of its own).
-
-### Fixed
-- Markdown supplied through the CLI allowlist is now bounded to 4 MiB before
-  it is read. Oversized inputs receive a distinct rejection reason, preserving
-  the query's honest citation boundary without unbounded local file reads.
-- Removed an exact project-count reference from the technical overview.
 
 ## [0.0.5] - Deterministic scoring, traceable citations, real document allowlist
 ### Added

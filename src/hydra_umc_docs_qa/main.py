@@ -51,7 +51,11 @@ def _run_query(question: str, docs: list[Path], top_k: int) -> int:
         return 1
 
     index = build_index(chunks)
-    results = search(index, question, top_k=top_k)
+    try:
+        results = search(index, question, top_k=top_k)
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
+        return 1
 
     if not results:
         print(f'No relevant passages found for: "{question}"')

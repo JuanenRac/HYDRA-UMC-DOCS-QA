@@ -103,6 +103,13 @@ def search(index: TfidfIndex, query: str, *, top_k: int = 5) -> list[SearchResul
     honest miss) rather than being silently dropped from an average that
     would understate how little the corpus actually covers the question.
     """
+    if top_k < 0:
+        # `results[:top_k]` below would otherwise hit Python's negative-slice
+        # semantics (e.g. top_k=-1 returns everything but the lowest-ranked
+        # result) instead of erroring or returning nothing - a real,
+        # CLI-reachable edge case (`--top-k -1`), not just a defensive guard.
+        raise ValueError(f"top_k must be >= 0, got {top_k}")
+
     query_tf = _term_frequencies(tokenize(query))
     query_vector = {
         term: weight * index.idf[term] for term, weight in query_tf.items() if term in index.idf
