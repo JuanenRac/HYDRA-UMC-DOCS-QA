@@ -23,6 +23,7 @@ from typing import Iterable
 # information-disclosure and citation-integrity risk once this project is
 # exposed as an API rather than run by hand.
 ALLOWED_SUFFIXES = frozenset({".md", ".markdown"})
+MAX_DOCUMENT_BYTES = 4 * 1024 * 1024
 
 
 @dataclass(frozen=True)
@@ -96,6 +97,7 @@ class RejectionReason(str, Enum):
 
     MISSING = "missing"
     DISALLOWED_EXTENSION = "disallowed_extension"
+    TOO_LARGE = "too_large"
 
 
 @dataclass(frozen=True)
@@ -106,6 +108,8 @@ class RejectedDocument:
     def describe(self) -> str:
         if self.reason is RejectionReason.MISSING:
             return f"{self.path}: file not found (no source)"
+        if self.reason is RejectionReason.TOO_LARGE:
+            return f"{self.path}: exceeds the {MAX_DOCUMENT_BYTES}-byte ingestion limit"
         suffix = self.path.suffix or "(none)"
         return f"{self.path}: disallowed extension {suffix} - only {', '.join(sorted(ALLOWED_SUFFIXES))} are ingested"
 
@@ -118,6 +122,8 @@ def validate_doc_path(path: Path) -> RejectedDocument | None:
         return RejectedDocument(path=path, reason=RejectionReason.MISSING)
     if path.suffix.lower() not in ALLOWED_SUFFIXES:
         return RejectedDocument(path=path, reason=RejectionReason.DISALLOWED_EXTENSION)
+    if path.stat().st_size > MAX_DOCUMENT_BYTES:
+        return RejectedDocument(path=path, reason=RejectionReason.TOO_LARGE)
     return None
 
 

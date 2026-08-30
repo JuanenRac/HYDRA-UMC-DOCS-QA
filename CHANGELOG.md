@@ -19,6 +19,9 @@ bumped manually only. See `bump_version.py`.
   firmware/os/models of its own).
 
 ### Fixed
+- Markdown supplied through the CLI allowlist is now bounded to 4 MiB before
+  it is read. Oversized inputs receive a distinct rejection reason, preserving
+  the query's honest citation boundary without unbounded local file reads.
 - Removed an exact project-count reference from the technical overview.
 
 ## [0.0.5] - Deterministic scoring, traceable citations, real document allowlist

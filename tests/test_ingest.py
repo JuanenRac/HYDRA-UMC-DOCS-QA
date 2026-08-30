@@ -8,6 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from hydra_umc_docs_qa.ingest import (
+    MAX_DOCUMENT_BYTES,
     RejectionReason,
     ingest_allowed_markdown_files,
     ingest_markdown_file,
@@ -126,6 +127,17 @@ def test_validate_doc_path_rejects_disallowed_extension(tmp_path: Path) -> None:
     assert issue is not None
     assert issue.reason is RejectionReason.DISALLOWED_EXTENSION
     assert ".env" in issue.describe()
+
+
+def test_validate_doc_path_rejects_oversized_markdown_before_reading(tmp_path: Path) -> None:
+    oversized = tmp_path / "large.md"
+    oversized.write_bytes(b"# " + b"x" * MAX_DOCUMENT_BYTES)
+
+    issue = validate_doc_path(oversized)
+
+    assert issue is not None
+    assert issue.reason is RejectionReason.TOO_LARGE
+    assert str(MAX_DOCUMENT_BYTES) in issue.describe()
 
 
 def test_ingest_allowed_markdown_files_separates_valid_from_rejected(tmp_path: Path) -> None:
