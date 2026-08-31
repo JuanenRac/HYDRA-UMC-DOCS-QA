@@ -145,7 +145,7 @@ HYDRA-UMC-DOCS-QA/
 
 ---
 
-## ⚙️ BUILD & RUN
+## ⚙️ BUILD & RUN GUIDE
 
 Requires Python >= 3.10.
 
