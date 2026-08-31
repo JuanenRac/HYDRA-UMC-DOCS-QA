@@ -5,6 +5,27 @@ version number follows this ecosystem's "odometer" scheme: PATCH +1 on
 every real build, rolling into MINOR past 9 (`0.0.9` -> `0.1.0`); MAJOR is
 bumped manually only. See `bump_version.py`.
 
+## [0.0.7] - Real v0: JSON/HTTP server mode, plus CM5 deployment
+
+- **`api.py`** (new) - `GET /query` reaches the exact same `search()`
+  the CLI's own `query` subcommand already runs, but real difference
+  from the CLI: `build_server_index()` ingests and builds the real
+  `TfidfIndex` ONCE at server startup, not on every single request -
+  the CLI's own re-ingest-per-invocation is fine for a one-shot command,
+  wasteful for a service handling one query after another. Real gap this
+  closes: this project's own TF-IDF retrieval was only ever reachable as
+  a one-shot CLI.
+- **`main.py`** - new `serve` subcommand (`--docs`/`--addr`/`--port`,
+  default `127.0.0.1:8110`, same `--docs` default as the CLI - this
+  repo's own README.md/CHANGELOG.md).
+- **`systemd/hydra-umc-docs-qa.service`** (new) - loopback-only unit for
+  `HYDRA-UMC-OS/provisioning/install_docs_qa.sh` (new, that repo), same
+  stdlib "copy src/ + PYTHONPATH" shape as `install_datalake.sh` - plus
+  this repo's own README.md/CHANGELOG.md, so the default corpus resolves
+  to something real once deployed.
+- 8 new tests (`tests/test_api.py`, real end-to-end HTTP, reusing this
+  repo's own `tests/test_cli.py` fixture shapes) - 37 total.
+
 ## [0.0.6] - Rejected a negative --top-k instead of silently mis-slicing
 
 ### Fixed

@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from .api import DocsQaServer, build_server_index
 from .ingest import ingest_allowed_markdown_files
 from .index import build_index, search
 
@@ -76,6 +77,28 @@ def _run_query(question: str, docs: list[Path], top_k: int) -> int:
     return 0
 
 
+def _run_serve(addr: str, port: int, docs: list[Path]) -> int:
+    index, ingested_sources, rejected_descriptions = build_server_index(docs)
+    for description in rejected_descriptions:
+        print(f"REJECTED {description}")
+    if index is None:
+        print("WARNING: no documents were successfully ingested - GET /query will report 503 until this is fixed.")
+    else:
+        print(f"[docs-qa] indexed {len(ingested_sources)} document(s): {', '.join(ingested_sources)}")
+
+    server = DocsQaServer((addr, port), index, ingested_sources, rejected_descriptions)
+    print(f"[docs-qa] HTTP API listening on {addr}:{port}")
+    print("[docs-qa] GET /query?q=...&top_k=N, GET /stats")
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        server.server_close()
+        print("[docs-qa] shutting down")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="hydra-umc-docs-qa", description=ROLE)
     subparsers = parser.add_subparsers(dest="command")
@@ -93,6 +116,22 @@ def build_parser() -> argparse.ArgumentParser:
     )
     query_parser.add_argument(
         "--top-k", type=int, default=5, help="Maximum number of passages to print (default: 5)."
+    )
+
+    serve_parser = subparsers.add_parser(
+        "serve",
+        help="Run 'query' as a JSON/HTTP API (GET /query?q=...&top_k=N) - unlike the CLI, "
+             "which re-ingests and re-indexes the corpus on every invocation, this builds "
+             "the real TfidfIndex ONCE at startup and reuses it for every query.",
+    )
+    serve_parser.add_argument("--addr", default="127.0.0.1", help="address to bind the HTTP API to")
+    serve_parser.add_argument("--port", type=int, default=8110, help="port for the HTTP API")
+    serve_parser.add_argument(
+        "--docs",
+        nargs="+",
+        type=Path,
+        default=None,
+        help="Markdown files to ingest at startup (default: this repo's own README.md/CHANGELOG.md).",
     )
 
     return parser
@@ -113,6 +152,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "query":
         docs = args.docs if args.docs is not None else list(_DEFAULT_DOCS)
         return _run_query(args.question, docs, args.top_k)
+    if args.command == "serve":
+        docs = args.docs if args.docs is not None else list(_DEFAULT_DOCS)
+        return _run_serve(args.addr, args.port, docs)
 
     _print_identity()
     return 0
