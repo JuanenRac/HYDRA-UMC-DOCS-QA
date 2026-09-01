@@ -235,7 +235,18 @@ Top 1 passage(s) for: "firmware flashing"
 
 ## 🔗 PROYECTOS RELACIONADOS
 
-Este proyecto forma parte de un ecosistema de robótica más amplio del mismo autor (JuanenRac / Electro Hobby 3D), que abarca firmware, software de control, nodos de IA y herramientas de flota. Este asistente no tiene relaciones fuera de su propia familia (padre HYDRA-UMC-COGNITIVE-NODE y hermanos HYDRA-UMC-VLA-ENGINE, HYDRA-UMC-VOICE-UI, HYDRA-UMC-SEMANTIC-PLANNER) más allá de lo ya descrito arriba.
+Este proyecto forma parte de un ecosistema de robótica más amplio del mismo autor (JuanenRac / Electro Hobby 3D), que abarca firmware, software de control, nodos de IA y herramientas de flota.
+
+### Familia
+
+**Padre:** **[HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE)** — el Hub de Integración que posee la imagen/pesos compartidos de HydraOS de este asistente y lo conecta al flujo cognitivo.
+
+**Hermanos:**
+- **[HYDRA-UMC-VOICE-UI](https://github.com/JuanenRac/HYDRA-UMC-VOICE-UI)** — pasarela STT/TTS para el mismo planificador que este asistente también fundamenta.
+- **[HYDRA-UMC-SEMANTIC-PLANNER](https://github.com/JuanenRac/HYDRA-UMC-SEMANTIC-PLANNER)** — el planificador LLM al que alimentan las respuestas RAG de este asistente.
+- **[HYDRA-UMC-VLA-ENGINE](https://github.com/JuanenRac/HYDRA-UMC-VLA-ENGINE)** — convierte datos de visión en tokens de acción para el mismo planificador.
+
+Este asistente no tiene relaciones fuera de su propia familia más allá de lo ya cubierto arriba.
 
 ### Resto del ecosistema
 

@@ -166,10 +166,18 @@ Top 1 passage(s) for: "firmware flashing"
 ## 🔗 相关项目
 
 本项目是同一作者（JuanenRac / Electro Hobby 3D）打造的更大规模机器人生态
-系统的一部分，涵盖固件、控制软件、AI 节点和车队工具。除了上文已经说明的
-内容之外，本助手在其自身的项目族（父项目 HYDRA-UMC-COGNITIVE-NODE 以及
-同级项目 HYDRA-UMC-VLA-ENGINE、HYDRA-UMC-VOICE-UI、
-HYDRA-UMC-SEMANTIC-PLANNER）之外没有其他关联。
+系统的一部分，涵盖固件、控制软件、AI 节点和车队工具。
+
+### 家族
+
+**父级：** **[HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE)** —— 拥有该助手共享的 HydraOS 镜像/权重并将其接入认知工作流的集成中心。
+
+**兄弟服务：**
+- **[HYDRA-UMC-VOICE-UI](https://github.com/JuanenRac/HYDRA-UMC-VOICE-UI)** —— 该助手同样为其提供依据的同一规划器所使用的 STT/TTS 网关。
+- **[HYDRA-UMC-SEMANTIC-PLANNER](https://github.com/JuanenRac/HYDRA-UMC-SEMANTIC-PLANNER)** —— 该助手的 RAG 回答所馈送的 LLM 规划器。
+- **[HYDRA-UMC-VLA-ENGINE](https://github.com/JuanenRac/HYDRA-UMC-VLA-ENGINE)** —— 将视觉数据转换为同一规划器所需的动作令牌。
+
+除了上文已经说明的自身家族之外，本助手没有其他关联。
 
 ### 生态系统的其余部分
 

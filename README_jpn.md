@@ -173,11 +173,18 @@ Top 1 passage(s) for: "firmware flashing"
 
 本プロジェクトは、同一著者（JuanenRac / Electro Hobby 3D）による、
 ファームウェア、制御ソフトウェア、AI ノード、フリート管理ツールにまたがる、
-より大きなロボティクスエコシステムの一部です。上記で既に説明した内容を
-超えて、本アシスタントは自身のファミリー（親プロジェクト
-HYDRA-UMC-COGNITIVE-NODE および兄弟プロジェクトである
-HYDRA-UMC-VLA-ENGINE、HYDRA-UMC-VOICE-UI、HYDRA-UMC-SEMANTIC-PLANNER）の
-外に他の関連を持ちません。
+より大きなロボティクスエコシステムの一部です。
+
+### ファミリー
+
+**親:** **[HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE)** —— このアシスタントの共有 HydraOS イメージ/重みを所有し、認知ワークフローに組み込む統合ハブ。
+
+**兄弟:**
+- **[HYDRA-UMC-VOICE-UI](https://github.com/JuanenRac/HYDRA-UMC-VOICE-UI)** —— このアシスタントも根拠づける同じプランナー向けの STT/TTS ゲートウェイ。
+- **[HYDRA-UMC-SEMANTIC-PLANNER](https://github.com/JuanenRac/HYDRA-UMC-SEMANTIC-PLANNER)** —— このアシスタントの RAG 回答が供給される LLM プランナー。
+- **[HYDRA-UMC-VLA-ENGINE](https://github.com/JuanenRac/HYDRA-UMC-VLA-ENGINE)** —— ビジョンデータを同じプランナー向けのアクショントークンに変換します。
+
+本アシスタントは、上記で既に説明した自身のファミリーの外に他の関連を持ちません。
 
 ### エコシステムのその他のプロジェクト
 
