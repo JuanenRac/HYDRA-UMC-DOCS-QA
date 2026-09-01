@@ -226,7 +226,7 @@ Top 1 passage(s) for: "firmware flashing"
 
 ---
 
-## 🚀 ROADMAP
+## 🚀 TABELLA DI MARCIA
 * **Fase 1:** Distribuzione del motore VLA e elaborazione dell'input multi-modale su Hailo-10.
 * **Fase 2:** Integrazione del pianificatore semantico con modelli comportamentali di sciame e memoria a lungo termine.
 * **Fase 3:** Esecuzione locale a bassa latenza dell'interfaccia vocale e cancellazione del rumore industriale.
