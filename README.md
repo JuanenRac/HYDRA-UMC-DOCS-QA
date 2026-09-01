@@ -303,6 +303,7 @@ This assistant has no relations outside its own family beyond what's covered abo
 ## 👤 AUTHOR
 **JuanenRac** (Electro Hobby 3D)
 📧 electrohobby3d@gmail.com
+📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
 
 ## 📜 LICENSE
 GPL-3.0 - See LICENSE for details.
