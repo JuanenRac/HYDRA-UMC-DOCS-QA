@@ -228,7 +228,18 @@ Top 1 passage(s) for: "firmware flashing"
 
 ## 🔗 RELATED PROJECTS
 
-This project is part of a larger robotics ecosystem by the same author (JuanenRac / Electro Hobby 3D), spanning firmware, control software, AI nodes, and fleet tooling. This assistant has no relations outside its own family (parent HYDRA-UMC-COGNITIVE-NODE and siblings HYDRA-UMC-VLA-ENGINE, HYDRA-UMC-VOICE-UI, HYDRA-UMC-SEMANTIC-PLANNER) beyond what's already covered above.
+This project is part of a larger robotics ecosystem by the same author (JuanenRac / Electro Hobby 3D), spanning firmware, control software, AI nodes, and fleet tooling.
+
+### Family
+
+**Parent:** **[HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE)** — the Integration Hub that owns this assistant's shared HydraOS image/weights and wires it into the cognitive workflow.
+
+**Siblings:**
+- **[HYDRA-UMC-VOICE-UI](https://github.com/JuanenRac/HYDRA-UMC-VOICE-UI)** — STT/TTS gateway for the shared planner this assistant also grounds.
+- **[HYDRA-UMC-SEMANTIC-PLANNER](https://github.com/JuanenRac/HYDRA-UMC-SEMANTIC-PLANNER)** — the LLM planner this assistant's RAG answers feed into.
+- **[HYDRA-UMC-VLA-ENGINE](https://github.com/JuanenRac/HYDRA-UMC-VLA-ENGINE)** — turns vision data into action tokens for the same planner.
+
+This assistant has no relations outside its own family beyond what's covered above.
 
 ### Rest of the Ecosystem
 
