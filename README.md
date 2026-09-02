@@ -124,14 +124,20 @@ HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
 │   ├── ingest.py            # Real Markdown ingestion -> heading-scoped DocChunks
 │   ├── index.py              # Real stdlib-only TF-IDF index + cosine-similarity search
+│   ├── api.py                  # Plain JSON/HTTP surface (stdlib http.server) over the real `query` logic
 │   └── main.py                # Entry point + real `query` subcommand
-├── tests/                   # Real tests: ingestion, allowlist, ranking, determinism, end-to-end CLI
+├── tests/                   # Real tests: ingestion, allowlist, ranking, determinism, api, end-to-end CLI
 ├── docs/                    # Documentation and technical manuals
 ├── images/                  # Media and diagrams
-├── scripts/                 # Utility scripts
+├── systemd/
+│   └── hydra-umc-docs-qa.service # Local CM5 docs-query API systemd unit
+├── tools/
+│   ├── build_test.py        # Non-versioning build/compile check
+│   └── ci_validate.py       # Manifest/CHANGELOG/docs validation used by CI
 ├── build/                   # Local build output (git-ignored)
 ├── pyproject.toml           # Package metadata (version odometer-bumped on every real build)
-├── bump_version.py          # Odometer-style version bump (used by build.sh/.bat)
+├── bump_version.py          # Odometer-style native version bump (used by build.sh/.bat)
+├── bump_manifest_version.py # Syncs hydra-umc.project.json's version to the native one (--sync)
 ├── build.sh / build.bat     # Create venv, install (with dev extras), verify import, run tests
 └── run.sh / run.bat         # Run the entry point (forwards args, e.g. `query`)
 ```

@@ -135,14 +135,20 @@ HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
 │   ├── ingest.py            # Echte Markdown-Ingestion -> DocChunks pro Überschrift
 │   ├── index.py              # Echter TF-IDF-Index (nur stdlib) + Kosinus-Ähnlichkeitssuche
+│   ├── api.py                  # Einfache JSON/HTTP-Oberfläche (stdlib http.server) über die echte `query`-Logik
 │   └── main.py                # Einstiegspunkt + echtes `query`-Subcommand
-├── tests/                   # Echte Tests: Ingestion, Positivliste, Ranking, Determinismus, End-to-End-CLI
+├── tests/                   # Echte Tests: Ingestion, Positivliste, Ranking, Determinismus, api, End-to-End-CLI
 ├── docs/                    # Dokumentation und technische Handbücher
 ├── images/                  # Medien und Diagramme
-├── scripts/                 # Utility-Skripte
+├── systemd/
+│   └── hydra-umc-docs-qa.service # systemd-Unit der lokalen CM5-Docs-Query-API
+├── tools/
+│   ├── build_test.py        # Nicht-versionierender Build-Check
+│   └── ci_validate.py       # Manifest/CHANGELOG/Docs-Validierung, von CI genutzt
 ├── build/                   # Lokale Build-Ausgabe (von git ignoriert)
-├── pyproject.toml           # Paket-Metadaten (Version 0.0.4, Kilometerzähler-Inkrement)
-├── bump_version.py          # Versionserhöhung im Kilometerzähler-Stil (von build.sh/.bat verwendet)
+├── pyproject.toml           # Paket-Metadaten (Version per Kilometerzähler-Inkrement)
+├── bump_version.py          # Native Versionserhöhung im Kilometerzähler-Stil (von build.sh/.bat verwendet)
+├── bump_manifest_version.py # Synchronisiert die Version von hydra-umc.project.json mit der nativen (--sync)
 ├── build.sh / build.bat     # Erstellt das venv, installiert (mit Dev-Extras), prüft den Import, führt Tests aus
 └── run.sh / run.bat         # Führt den Einstiegspunkt aus (leitet Argumente weiter, z. B. `query`)
 ```

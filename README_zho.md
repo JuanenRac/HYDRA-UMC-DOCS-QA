@@ -77,14 +77,20 @@ HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
 │   ├── ingest.py            # 真实的 Markdown 摄取 -> 按标题划分的 DocChunk
 │   ├── index.py              # 真实的 TF-IDF 索引（仅标准库）+ 余弦相似度搜索
+│   ├── api.py                  # 简洁的 JSON/HTTP 接口(基于 stdlib http.server),桥接真实的 `query` 逻辑
 │   └── main.py                # 入口点 + 真实的 `query` 子命令
-├── tests/                   # 真实测试：摄取、白名单、排序、确定性、端到端 CLI
+├── tests/                   # 真实测试：摄取、白名单、排序、确定性、api、端到端 CLI
 ├── docs/                    # 文档与技术手册
 ├── images/                  # 媒体与图表
-├── scripts/                 # 实用脚本
+├── systemd/
+│   └── hydra-umc-docs-qa.service # 本地 CM5 文档查询 API 的 systemd 单元
+├── tools/
+│   ├── build_test.py        # 不递增版本号的构建检查
+│   └── ci_validate.py       # CI 使用的清单/CHANGELOG/文档校验
 ├── build/                   # 本地构建输出（已被 git 忽略）
-├── pyproject.toml           # 包元数据（版本 0.0.4，里程表式递增）
-├── bump_version.py          # 里程表式版本递增（由 build.sh/.bat 使用）
+├── pyproject.toml           # 包元数据（里程表式递增版本号）
+├── bump_version.py          # 原生版本的里程表式递增（由 build.sh/.bat 使用）
+├── bump_manifest_version.py # 将 hydra-umc.project.json 的版本与原生版本同步(--sync)
 ├── build.sh / build.bat     # 创建 venv、安装（含 dev 附加依赖）、验证导入、运行测试
 └── run.sh / run.bat         # 运行入口点（转发参数，例如 `query`）
 ```

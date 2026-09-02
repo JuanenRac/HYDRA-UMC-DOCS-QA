@@ -129,14 +129,20 @@ HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
 │   ├── ingest.py            # Ingesta real de Markdown -> DocChunks por encabezado
 │   ├── index.py              # Índice TF-IDF real (stdlib puro) + búsqueda por similitud coseno
+│   ├── api.py                  # Superficie JSON/HTTP plana (http.server de stdlib) sobre la lógica real de `query`
 │   └── main.py                # Punto de entrada + subcomando real `query`
-├── tests/                   # Tests reales: ingesta, lista blanca, ranking, determinismo, CLI end-to-end
+├── tests/                   # Tests reales: ingesta, lista blanca, ranking, determinismo, api, CLI end-to-end
 ├── docs/                    # Documentación y manuales técnicos
 ├── images/                  # Medios y diagramas
-├── scripts/                 # Scripts de utilidad
+├── systemd/
+│   └── hydra-umc-docs-qa.service # Unidad systemd de la API local de consultas de docs en la CM5
+├── tools/
+│   ├── build_test.py        # Comprobación de compilación sin versionado
+│   └── ci_validate.py       # Validación de manifiesto/CHANGELOG/docs usada por CI
 ├── build/                   # Salida de build local (ignorada por git)
-├── pyproject.toml           # Metadatos del paquete (versión 0.0.4, incremento cuentakilómetros)
-├── bump_version.py          # Incremento de versión estilo cuentakilómetros (usado por build.sh/.bat)
+├── pyproject.toml           # Metadatos del paquete (versión con incremento cuentakilómetros)
+├── bump_version.py          # Incremento de versión nativa estilo cuentakilómetros (usado por build.sh/.bat)
+├── bump_manifest_version.py # Sincroniza la versión de hydra-umc.project.json con la nativa (--sync)
 ├── build.sh / build.bat     # Crea el venv, instala (con extras de dev), verifica la importación, corre tests
 └── run.sh / run.bat         # Ejecuta el punto de entrada (reenvia argumentos, ej. `query`)
 ```

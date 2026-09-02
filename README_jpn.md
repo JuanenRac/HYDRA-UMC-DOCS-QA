@@ -79,14 +79,20 @@ HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
 │   ├── ingest.py            # 実際の Markdown 取り込み -> 見出し単位の DocChunk
 │   ├── index.py              # 実際の TF-IDF インデックス（標準ライブラリのみ）+ コサイン類似度検索
+│   ├── api.py                  # シンプルなJSON/HTTPサーフェス(stdlibのhttp.server)。実際の`query`ロジックを橋渡し
 │   └── main.py                # エントリポイント + 実際の `query` サブコマンド
-├── tests/                   # 実際のテスト：取り込み、アローリスト、ランキング、決定性、エンドツーエンド CLI
+├── tests/                   # 実際のテスト：取り込み、アローリスト、ランキング、決定性、api、エンドツーエンド CLI
 ├── docs/                    # ドキュメントと技術マニュアル
 ├── images/                  # メディアと図表
-├── scripts/                 # ユーティリティスクリプト
+├── systemd/
+│   └── hydra-umc-docs-qa.service # ローカルCM5ドキュメント検索APIのsystemdユニット
+├── tools/
+│   ├── build_test.py        # バージョンを増やさないビルドチェック
+│   └── ci_validate.py       # CI が使用するマニフェスト/CHANGELOG/ドキュメント検証
 ├── build/                   # ローカルビルド出力（git 管理外）
-├── pyproject.toml           # パッケージメタデータ（バージョン 0.0.4、オドメーター式増加）
-├── bump_version.py          # オドメーター式バージョンインクリメント（build.sh/.bat が使用）
+├── pyproject.toml           # パッケージメタデータ（オドメーター式バージョン増加）
+├── bump_version.py          # ネイティブバージョンのオドメーター式インクリメント（build.sh/.bat が使用）
+├── bump_manifest_version.py # hydra-umc.project.json のバージョンをネイティブ版と同期(--sync)
 ├── build.sh / build.bat     # venv 作成、インストール（dev エクストラ付き）、インポート検証、テスト実行
 └── run.sh / run.bat         # エントリポイントを実行（引数を転送、例：`query`）
 ```
