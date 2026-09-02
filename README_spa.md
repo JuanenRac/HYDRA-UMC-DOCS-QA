@@ -23,7 +23,7 @@
 Ha "leído" todos los manuales, documentación de esquemas y código fuente del ecosistema, lo que le permite asistir en la resolución de problemas, consultas de pinout y compilación de firmware sin necesidad de conexión a internet.
 
 ### Características Clave:
-* 🔍 **Búsqueda Vectorial Local (v0):** Recuperación léxica real TF-IDF, stdlib puro, sobre documentos Markdown locales. *(implementado como busqueda lexica real - todavia no busqueda semantica basada en embeddings, y la ingesta de PDF sigue siendo trabajo futuro; ver BUILD Y EJECUCION abajo)*
+* 🔍 **Búsqueda Vectorial Local (v0):** Recuperación léxica real TF-IDF, stdlib puro, sobre documentos Markdown locales. *(implementado como búsqueda léxica real - todavía no búsqueda semántica basada en embeddings, y la ingesta de PDF sigue siendo trabajo futuro; ver BUILD Y EJECUCIÓN abajo)*
 * 🔒 **Lista blanca real de documentos:** solo los archivos `.md`/`.markdown` que realmente existen se ingieren y citan - cualquier otra ruta `--docs` (inexistente, o de un tipo de archivo no permitido) se rechaza con un motivo distinto e impreso, en vez de omitirse silenciosamente o leerse como si fuera documentación real. *(implementado)*
 * 🔗 **Citas trazables:** cada resultado cita `source#index` - un puntero estable y desambiguador que apunta al pasaje exacto ingerido, recuperable de forma determinista volviendo a analizar la misma fuente. *(implementado)*
 * 🎯 **Puntuación determinista:** el ranking es una función pura del corpus y del texto de la consulta, independiente de la semilla de hash por proceso del intérprete. *(implementado)*
@@ -86,15 +86,15 @@ hermanos (VLA-Engine, Voice-UI, Semantic-Planner):
   embeddings.** La búsqueda semántica basada en embeddings necesita una
   dependencia real de modelo (idealmente el propio Hailo-10 que ya
   menciona este README) - un índice TF-IDF/similitud coseno puro en
-  stdlib es real, testeable, y no necesita nada mas alla del propio
-  Python, dando a este proyecto un nucleo de recuperacion funcional hoy
-  que un futuro indice basado en embeddings puede sustituir detras del
+  stdlib es real, testeable, y no necesita nada más allá del propio
+  Python, dando a este proyecto un núcleo de recuperación funcional hoy
+  que un futuro índice basado en embeddings puede sustituir detrás del
   mismo contrato `search()`, sin tocar la CLI ni el paso de ingesta.
 * **Por qué una consulta sin coincidencias devuelve un fallo honesto, no
-  una respuesta de respaldo.** v0 no tiene paso de sintesis por LLM - una
+  una respuesta de respaldo.** v0 no tiene paso de síntesis por LLM - una
   pregunta cuyas palabras no coinciden con el corpus ingerido recibe
   `No relevant passages found` (ver `main.py`), nunca una respuesta
-  inventada o alucinada disfrazada de resultado real de recuperacion.
+  inventada o alucinada disfrazada de resultado real de recuperación.
 * **Por qué una ruta `--docs` no permitida se rechaza, en vez de
   omitirse o ingerirse silenciosamente.** Un asistente de QA que se
   supone "fundamentado en la documentación propia del ecosistema" no
@@ -128,7 +128,7 @@ hermanos (VLA-Engine, Voice-UI, Semantic-Planner):
 HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
 │   ├── ingest.py            # Ingesta real de Markdown -> DocChunks por encabezado
-│   ├── index.py              # Indice TF-IDF real (stdlib puro) + busqueda por similitud coseno
+│   ├── index.py              # Índice TF-IDF real (stdlib puro) + búsqueda por similitud coseno
 │   └── main.py                # Punto de entrada + subcomando real `query`
 ├── tests/                   # Tests reales: ingesta, lista blanca, ranking, determinismo, CLI end-to-end
 ├── docs/                    # Documentación y manuales técnicos
