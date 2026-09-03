@@ -27,6 +27,7 @@ It has "read" all manuals, schematic documentation, and source code across the e
 * 🔒 **Real document allowlist:** only existing `.md`/`.markdown` files are ever ingested and cited - every other `--docs` path (missing, or a disallowed file type) is rejected with a distinct, printed reason instead of being silently skipped or silently read as if it were real documentation. *(implemented)*
 * 🔗 **Traceable citations:** every result cites `source#index` - a stable, disambiguating pointer back to the exact ingested passage, deterministically recoverable by re-parsing the same source. *(implemented)*
 * 🎯 **Deterministic scoring:** ranking is a pure function of the corpus and query text, independent of the interpreter's per-process hash seed. *(implemented)*
+* 🌐 **Real JSON/HTTP API:** the `serve` subcommand runs the exact same TF-IDF search as a long-running local service (default `127.0.0.1:8110`) via `GET /query?q=...&top_k=N` and `GET /stats` - the corpus is ingested and indexed ONCE at startup instead of on every request. See [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) for real captured examples. *(implemented)*
 * 🤖 **Grounded Reasoning:** Answers are strictly based on the provided project documentation.
 * 🎙️ **Voice Integration:** Integrated with VOICE-UI for hands-free maintenance support.
 * 🛠️ **Code Awareness:** Can explain firmware modules and CAN protocol specifics.
@@ -70,11 +71,13 @@ service into `docker-compose.yml` alongside its three siblings
   (`hydra_umc_docs_qa`) separate from repo-root tooling
   (`bump_version.py`), matching the layout used by every other Python
   project across the ecosystem.
-* **Why the entry point only prints identity/version/role today.** This
-  is the andamiaje (scaffolding) stage: proving the package installs,
-  compiles and imports cleanly - on the actual target Python version - is
-  a prerequisite for adding real vector-search/RAG ingestion logic later,
-  and keeps that later work isolated from packaging concerns.
+* **Why bare invocation (no subcommand) still only prints
+  identity/version/role.** That was the original andamiaje (scaffolding)
+  behavior, proving the package installs, compiles and imports cleanly
+  before any real logic existed - it stays the default today as a quick
+  "is this actually installed and working" smoke check, now alongside
+  the real `query` (TF-IDF search) and `serve` (JSON/HTTP API)
+  subcommands the scaffolding was a prerequisite for.
 * **How this fits the rest of the ecosystem.** This assistant grounds
   its answers in the ecosystem's own documentation, giving its sibling
   HYDRA-UMC-SEMANTIC-PLANNER a technical-knowledge source it can query
@@ -125,9 +128,10 @@ HYDRA-UMC-DOCS-QA/
 │   ├── ingest.py            # Real Markdown ingestion -> heading-scoped DocChunks
 │   ├── index.py              # Real stdlib-only TF-IDF index + cosine-similarity search
 │   ├── api.py                  # Plain JSON/HTTP surface (stdlib http.server) over the real `query` logic
-│   └── main.py                # Entry point + real `query` subcommand
+│   └── main.py                # Entry point + real `query`/`serve` subcommands
 ├── tests/                   # Real tests: ingestion, allowlist, ranking, determinism, api, end-to-end CLI
-├── docs/                    # Documentation and technical manuals
+├── docs/
+│   └── CLI_REFERENCE.md    # Full CLI + JSON/HTTP API reference, every example captured from a real run
 ├── images/                  # Media and diagrams
 ├── systemd/
 │   └── hydra-umc-docs-qa.service # Local CM5 docs-query API systemd unit
@@ -203,6 +207,8 @@ Top 1 passage(s) for: "firmware flashing"
 1. [0.289] manual.md#1 - Firmware Flashing
    Flash URTC firmware over SWD or JTAG using URTC-FLASHER.
 ```
+
+The same search is also reachable as a long-running JSON/HTTP API via `./run.sh serve --docs manual.md` (default `127.0.0.1:8110`). See [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) for the full command and endpoint reference, with every example captured from a real run.
 
 ### 🩺 Troubleshooting
 

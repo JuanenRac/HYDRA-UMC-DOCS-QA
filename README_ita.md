@@ -27,6 +27,7 @@ Ha "letto" tutti i manuali, la documentazione degli schemi e il codice sorgente 
 * 🔒 **Vera lista consentiti dei documenti:** vengono ingeriti e citati solo i file `.md`/`.markdown` realmente esistenti - qualsiasi altro percorso `--docs` (mancante, o di un tipo di file non consentito) viene rifiutato con un motivo distinto e stampato, invece di essere ignorato silenziosamente o letto come se fosse documentazione reale. *(implementato)*
 * 🔗 **Citazioni tracciabili:** ogni risultato cita `source#index` - un puntatore stabile e univoco al passaggio esatto ingerito, recuperabile in modo deterministico rianalizzando la stessa fonte. *(implementato)*
 * 🎯 **Punteggio deterministico:** il ranking è una funzione pura del corpus e del testo della query, indipendente dal seed hash per processo dell'interprete. *(implementato)*
+* 🌐 **Vera API JSON/HTTP:** il sottocomando `serve` esegue esattamente la stessa ricerca TF-IDF come servizio locale di lunga durata (default `127.0.0.1:8110`) tramite `GET /query?q=...&top_k=N` e `GET /stats` - il corpus viene ingerito e indicizzato UNA sola volta all'avvio, non a ogni richiesta. Vedi [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) per esempi reali catturati. *(implementato)*
 * 🤖 **Ragionamento fondato:** Le risposte si basano rigorosamente sulla documentazione del progetto fornita.
 * 🎙️ **Integrazione vocale:** Integrato con VOICE-UI per il supporto alla manutenzione a mani libere.
 * 🛠️ **Consapevolezza del codice:** Può spiegare i moduli del firmware e le specifiche del protocollo CAN.
@@ -71,12 +72,14 @@ tre fratelli (VLA-Engine, Voice-UI, Semantic-Planner):
   (`hydra_umc_docs_qa`) separato dal tooling nella radice del repo
   (`bump_version.py`), come il resto dei progetti Python
   dell'ecosistema.
-* **Perché il punto di ingresso oggi stampa solo identità/versione/ruolo.**
-  Questa è la fase di andamiaje: dimostrare che il pacchetto si installa,
-  compila e importa correttamente - sulla versione Python reale target -
-  è un prerequisito prima di aggiungere la vera logica di
-  ricerca-vettoriale/RAG, e mantiene quel lavoro successivo isolato dalle
-  preoccupazioni di packaging.
+* **Perché l'invocazione nuda (senza sottocomando) continua a stampare
+  solo identità/versione/ruolo.** Era il comportamento originale della
+  fase di andamiaje, che dimostrava che il pacchetto si installa,
+  compila e importa correttamente prima che esistesse una vera logica -
+  oggi resta il comportamento predefinito come rapido controllo che
+  "è davvero installato e funziona", accanto ai veri sottocomandi
+  `query` (ricerca TF-IDF) e `serve` (API JSON/HTTP) per cui
+  quell'andamiaje era un prerequisito.
 * **Come si inserisce nel resto dell'ecosistema.** Questo assistente
   fonda le proprie risposte sulla documentazione propria
   dell'ecosistema, offrendo al fratello HYDRA-UMC-SEMANTIC-PLANNER una
@@ -132,9 +135,10 @@ HYDRA-UMC-DOCS-QA/
 │   ├── ingest.py            # Ingestione Markdown reale -> DocChunk per intestazione
 │   ├── index.py              # Indice TF-IDF reale (solo stdlib) + ricerca per similarità coseno
 │   ├── api.py                  # Superficie JSON/HTTP semplice (http.server di stdlib) sulla vera logica `query`
-│   └── main.py                # Punto di ingresso + sottocomando reale `query`
+│   └── main.py                # Punto di ingresso + sottocomandi reali `query`/`serve`
 ├── tests/                   # Test reali: ingestione, lista consentiti, ranking, determinismo, api, CLI end-to-end
-├── docs/                    # Documentazione e manuali tecnici
+├── docs/
+│   └── CLI_REFERENCE.md    # Riferimento completo CLI + API JSON/HTTP, ogni esempio catturato da un'esecuzione reale
 ├── images/                  # Media e diagrammi
 ├── systemd/
 │   └── hydra-umc-docs-qa.service # Unità systemd della API locale di query documenti sulla CM5
@@ -212,6 +216,8 @@ Top 1 passage(s) for: "firmware flashing"
 1. [0.289] manual.md#1 - Firmware Flashing
    Flash URTC firmware over SWD or JTAG using URTC-FLASHER.
 ```
+
+La stessa ricerca è raggiungibile anche come API JSON/HTTP di lunga durata tramite `./run.sh serve --docs manual.md` (default `127.0.0.1:8110`). Vedi [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) per il riferimento completo di comandi ed endpoint, con ogni esempio catturato da un'esecuzione reale.
 
 ### 🧪 Risoluzione dei problemi
 

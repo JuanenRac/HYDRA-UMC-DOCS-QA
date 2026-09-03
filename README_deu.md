@@ -27,6 +27,7 @@ Er hat alle Handbücher, Schaltdokumentationen und den Quellcode des gesamten Ö
 * 🔒 **Echte Dokument-Positivliste:** Es werden ausschließlich existierende `.md`/`.markdown`-Dateien eingelesen und zitiert - jeder andere `--docs`-Pfad (fehlend oder ein nicht zulässiger Dateityp) wird mit einem eigenen, ausgegebenen Grund abgelehnt, statt stillschweigend übersprungen oder wie echte Dokumentation gelesen zu werden. *(implementiert)*
 * 🔗 **Nachvollziehbare Zitate:** Jedes Ergebnis zitiert `source#index` - einen stabilen, eindeutigen Verweis auf die exakte eingelesene Passage, deterministisch wiederherstellbar durch erneutes Parsen derselben Quelle. *(implementiert)*
 * 🎯 **Deterministisches Scoring:** Das Ranking ist eine reine Funktion von Korpus und Anfrage-Text, unabhängig vom Hash-Seed des jeweiligen Interpreter-Prozesses. *(implementiert)*
+* 🌐 **Echte JSON/HTTP-API:** Der `serve`-Unterbefehl führt genau dieselbe TF-IDF-Suche als langlebigen lokalen Dienst aus (Standard `127.0.0.1:8110`) über `GET /query?q=...&top_k=N` und `GET /stats` - der Korpus wird nur EINMAL beim Start eingelesen und indiziert, nicht bei jeder Anfrage. Siehe [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) für echte, erfasste Beispiele. *(implementiert)*
 * 🤖 **Fundiertes Denken:** Antworten basieren strikt auf der bereitgestellten Projektdokumentation.
 * 🎙️ **Sprachintegration:** Integriert in VOICE-UI für freihändige Wartungsunterstützung.
 * 🛠️ **Code-Bewusstsein:** Kann Firmware-Module und CAN-Protokoll-Spezifikatiön erläutern.
@@ -72,12 +73,14 @@ Voice-UI, Semantic-Planner) ein:
   (`hydra_umc_docs_qa`) getrennt vom Tooling im Repo-Root
   (`bump_version.py`), passend zum Layout jedes anderen
   Python-Projekts im Ökosystem.
-* **Warum der Einstiegspunkt heute nur Identität/Version/Rolle ausgibt.**
-  Dies ist das Andamiaje-Stadium (Gerüstbau): der Nachweis, dass das
-  Paket sich korrekt installiert, kompiliert und importiert - auf der
-  echten Ziel-Python-Version - ist Voraussetzung, bevor echte
-  Vektorsuche-/RAG-Ingestion-Logik hinzugefügt wird, und hält diese
-  spätere Arbeit von Packaging-Belangen getrennt.
+* **Warum der nackte Aufruf (ohne Unterbefehl) weiterhin nur
+  Identität/Version/Rolle ausgibt.** Das war das ursprüngliche
+  Andamiaje-Verhalten (Gerüstbau), das nachwies, dass das Paket sich
+  korrekt installiert, kompiliert und importiert, bevor überhaupt echte
+  Logik existierte - es bleibt heute der Standard als schneller
+  "ist das wirklich installiert und funktioniert es"-Check, neben den
+  echten Unterbefehlen `query` (TF-IDF-Suche) und `serve`
+  (JSON/HTTP-API), für die dieses Gerüst eine Voraussetzung war.
 * **Wie sich das ins restliche Ökosystem einfügt.** Dieser Assistent
   fundiert seine Antworten auf der eigenen Dokumentation des
   Ökosystems und gibt seinem Geschwisterprojekt
@@ -136,9 +139,10 @@ HYDRA-UMC-DOCS-QA/
 │   ├── ingest.py            # Echte Markdown-Ingestion -> DocChunks pro Überschrift
 │   ├── index.py              # Echter TF-IDF-Index (nur stdlib) + Kosinus-Ähnlichkeitssuche
 │   ├── api.py                  # Einfache JSON/HTTP-Oberfläche (stdlib http.server) über die echte `query`-Logik
-│   └── main.py                # Einstiegspunkt + echtes `query`-Subcommand
+│   └── main.py                # Einstiegspunkt + echte `query`/`serve`-Subcommands
 ├── tests/                   # Echte Tests: Ingestion, Positivliste, Ranking, Determinismus, api, End-to-End-CLI
-├── docs/                    # Dokumentation und technische Handbücher
+├── docs/
+│   └── CLI_REFERENCE.md    # Vollständige CLI- + JSON/HTTP-API-Referenz, jedes Beispiel aus einem echten Lauf erfasst
 ├── images/                  # Medien und Diagramme
 ├── systemd/
 │   └── hydra-umc-docs-qa.service # systemd-Unit der lokalen CM5-Docs-Query-API
@@ -216,6 +220,8 @@ Top 1 passage(s) for: "firmware flashing"
 1. [0.289] manual.md#1 - Firmware Flashing
    Flash URTC firmware over SWD or JTAG using URTC-FLASHER.
 ```
+
+Dieselbe Suche ist auch als langlebige JSON/HTTP-API über `./run.sh serve --docs manual.md` erreichbar (Standard `127.0.0.1:8110`). Siehe [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) für die vollständige Befehls- und Endpunkt-Referenz, mit jedem Beispiel aus einem echten Lauf erfasst.
 
 ### 🧪 Fehlerbehebung
 

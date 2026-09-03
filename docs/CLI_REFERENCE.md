@@ -8,24 +8,28 @@ captured from a real run of the installed CLI — not written from memory.
 
 ```
 $ hydra-umc-docs-qa -h
-usage: hydra-umc-docs-qa [-h] {query} ...
+usage: hydra-umc-docs-qa [-h] {query,serve} ...
 
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the
 ecosystem's own documentation.
 
 positional arguments:
-  {query}
-    query     Real TF-IDF lexical search over ingested Markdown docs.
+  {query,serve}
+    query        Real TF-IDF lexical search over ingested Markdown docs.
+    serve        Run 'query' as a JSON/HTTP API (GET /query?q=...&top_k=N) -
+                 unlike the CLI, which re-ingests and re-indexes the corpus
+                 on every invocation, this builds the real TfidfIndex ONCE
+                 at startup and reuses it for every query.
 
 options:
-  -h, --help  show this help message and exit
+  -h, --help     show this help message and exit
 ```
 
 Bare invocation (no subcommand) prints identity/version/role and exits `0`:
 
 ```
 $ hydra-umc-docs-qa
-HYDRA-UMC-DOCS-QA v0.0.5
+HYDRA-UMC-DOCS-QA v0.0.7
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 
@@ -108,9 +112,84 @@ $ echo $?
 1
 ```
 
+### `serve [--docs FILE [FILE ...]] [--addr ADDR] [--port PORT]`
+
+Runs the exact same `search()` the CLI's own `query` subcommand uses, but
+as a long-running JSON/HTTP API (`src/hydra_umc_docs_qa/api.py`, stdlib
+`http.server`) instead of a one-shot CLI call. Real difference from the
+CLI: the CLI re-ingests and re-indexes the corpus on every single
+invocation (fine for a one-shot command); `serve` ingests and builds the
+real `TfidfIndex` ONCE at startup and reuses it for every query.
+`--docs` defaults to this repo's own `README.md`/`CHANGELOG.md`, same as
+the CLI. `--addr`/`--port` default to `127.0.0.1:8110`.
+
+Real startup output — one document, `manual.md`, real-indexed:
+
+```
+$ hydra-umc-docs-qa serve --docs manual.md --port 8110
+[docs-qa] indexed 1 document(s): manual.md
+[docs-qa] HTTP API listening on 127.0.0.1:8110
+[docs-qa] GET /query?q=...&top_k=N, GET /stats
+```
+
+`GET /query?q=QUESTION[&top_k=N]` — same search as the CLI's `query`,
+JSON-shaped. Real output against the same `manual.md` fixture used above
+(`# Firmware Flashing` / `Flash URTC firmware over SWD or JTAG using
+URTC-FLASHER.`) — note the score (`0.2887`) matches the CLI's own
+`[0.289]` for the identical query and text:
+
+```
+$ curl -s "http://127.0.0.1:8110/query?q=firmware+flashing"
+{"question": "firmware flashing", "results": [{"chunk": {"source": "manual.md", "heading": "Firmware Flashing", "text": "Flash URTC firmware over SWD or JTAG using URTC-FLASHER.", "index": 0}, "score": 0.28867513459481287}]}
+```
+
+`GET /stats` — which documents this server instance actually indexed at
+startup, and which were rejected:
+
+```
+$ curl -s http://127.0.0.1:8110/stats
+{"ingestedSources": ["manual.md"], "rejectedDocuments": [], "indexed": true}
+```
+
+A missing required query parameter is a real `400`, not a crash:
+
+```
+$ curl -s -w '\nHTTP:%{http_code}\n' http://127.0.0.1:8110/query
+{"error": "missing required query param: q"}
+HTTP:400
+```
+
+If **every** `--docs` path given to `serve` is rejected at startup, the
+server still starts (so `/stats` stays inspectable), but `GET /query`
+reports a real `503` instead of crashing or silently returning nothing:
+
+```
+$ hydra-umc-docs-qa serve --docs notes.pdf --port 8110
+REJECTED notes.pdf: file not found (no source)
+WARNING: no documents were successfully ingested - GET /query will report 503 until this is fixed.
+[docs-qa] HTTP API listening on 127.0.0.1:8110
+[docs-qa] GET /query?q=...&top_k=N, GET /stats
+
+$ curl -s -w '\nHTTP:%{http_code}\n' "http://127.0.0.1:8110/query?q=anything"
+{"error": "no documents were successfully ingested at startup - nothing to search"}
+HTTP:503
+```
+
+Any other path is a real `404`:
+
+```
+$ curl -s -w '\nHTTP:%{http_code}\n' http://127.0.0.1:8110/nope
+{"error": "not found"}
+HTTP:404
+```
+
 ## Exit codes
 
 | Code | Meaning |
 |------|---------|
-| `0` | ok — including an honest "no relevant passages found" miss |
+| `0` | ok — including an honest "no relevant passages found" miss; `serve` (clean shutdown via `Ctrl-C`) |
 | `1` | no documents were ingested (every `--docs` path was missing or disallowed) |
+
+`serve` itself never exits with `1` for a bad request — a malformed
+query or unknown route is a real HTTP error status (`400`/`404`/`503`),
+not a process exit; the process itself only stops on `Ctrl-C`.

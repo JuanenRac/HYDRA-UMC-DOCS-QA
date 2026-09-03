@@ -27,6 +27,7 @@ Il a « lu » tous les manuels, la documentation des schémas et le code source 
 * 🔒 **Liste blanche réelle des documents :** seuls les fichiers `.md`/`.markdown` réellement existants sont ingérés et cités - tout autre chemin `--docs` (manquant, ou d'un type de fichier non autorisé) est rejeté avec une raison distincte et affichée, au lieu d'être ignoré silencieusement ou lu comme s'il s'agissait de documentation réelle. *(implémenté)*
 * 🔗 **Citations traçables :** chaque résultat cite `source#index` - un pointeur stable et non ambigu vers le passage exact ingéré, récupérable de manière déterministe en réanalysant la même source. *(implémenté)*
 * 🎯 **Score déterministe :** le classement est une fonction pure du corpus et du texte de la requête, indépendante de la graine de hachage propre au processus de l'interpréteur. *(implémenté)*
+* 🌐 **Vraie API JSON/HTTP :** la sous-commande `serve` exécute exactement la même recherche TF-IDF comme un service local de longue durée (par défaut `127.0.0.1:8110`) via `GET /query?q=...&top_k=N` et `GET /stats` - le corpus est ingéré et indexé UNE seule fois au démarrage, pas à chaque requête. Voir [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) pour des exemples réels capturés. *(implémenté)*
 * 🤖 **Raisonnement fondé :** Les réponses sont strictement basées sur la documentation du projet fournie.
 * 🎙️ **Intégration vocale :** Intégré à VOICE-UI pour un support de maintenance mains libres.
 * 🛠️ **Connaissance du code :** Peut expliquer les modules du micrologiciel et les spécificités du protocole CAN.
@@ -71,12 +72,15 @@ frères (VLA-Engine, Voice-UI, Semantic-Planner) :
   (`hydra_umc_docs_qa`) de l'outillage à la racine du dépôt
   (`bump_version.py`), conformément au reste des projets Python de
   l'écosystème.
-* **Pourquoi le point d'entrée se contente d'afficher
-  identité/version/rôle aujourd'hui.** C'est l'étape d'échafaudage :
-  prouver que le paquet s'installe, se compile et s'importe correctement
-  - sur la version Python cible réelle - est un prérequis avant d'ajouter
-  une vraie logique de recherche vectorielle/RAG, et isole ce travail
-  ultérieur des préoccupations d'empaquetage.
+* **Pourquoi l'invocation nue (sans sous-commande) se contente encore
+  d'afficher identité/version/rôle.** C'était le comportement d'origine
+  de l'étape d'échafaudage, prouvant que le paquet s'installe, se
+  compile et s'importe correctement avant qu'aucune vraie logique
+  n'existe - cela reste le comportement par défaut aujourd'hui comme
+  vérification rapide que « c'est bien installé et ça fonctionne »,
+  aux côtés des vraies sous-commandes `query` (recherche TF-IDF) et
+  `serve` (API JSON/HTTP) pour lesquelles cet échafaudage était un
+  prérequis.
 * **Comment cela s'intègre dans le reste de l'écosystème.** Cet
   assistant fonde ses réponses sur la documentation propre de
   l'écosystème, donnant à son frère HYDRA-UMC-SEMANTIC-PLANNER une
@@ -131,9 +135,10 @@ HYDRA-UMC-DOCS-QA/
 │   ├── ingest.py            # Ingestion Markdown réelle -> DocChunks par titre
 │   ├── index.py              # Index TF-IDF réel (stdlib pur) + recherche par similarité cosinus
 │   ├── api.py                  # Surface JSON/HTTP simple (http.server de stdlib) sur la vraie logique `query`
-│   └── main.py                # Point d'entrée + sous-commande réelle `query`
+│   └── main.py                # Point d'entrée + sous-commandes réelles `query`/`serve`
 ├── tests/                   # Tests réels : ingestion, liste blanche, classement, déterminisme, api, CLI de bout en bout
-├── docs/                    # Documentation et manuels techniques
+├── docs/
+│   └── CLI_REFERENCE.md    # Référence complète CLI + API JSON/HTTP, chaque exemple capturé d'une exécution réelle
 ├── images/                  # Médias et diagrammes
 ├── systemd/
 │   └── hydra-umc-docs-qa.service # Unité systemd de l'API locale de requêtes docs sur la CM5
@@ -212,6 +217,8 @@ Top 1 passage(s) for: "firmware flashing"
 1. [0.289] manual.md#1 - Firmware Flashing
    Flash URTC firmware over SWD or JTAG using URTC-FLASHER.
 ```
+
+La même recherche est aussi accessible comme une API JSON/HTTP de longue durée via `./run.sh serve --docs manual.md` (par défaut `127.0.0.1:8110`). Voir [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) pour la référence complète des commandes et endpoints, avec chaque exemple capturé d'une exécution réelle.
 
 ### 🩺 Dépannage
 

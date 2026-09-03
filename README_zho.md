@@ -30,6 +30,7 @@
 * 🔒 **真实文档白名单：** 只有真实存在的 `.md`/`.markdown` 文件才会被摄取和引用——任何其他 `--docs` 路径（缺失，或文件类型不被允许）都会被拒绝，并打印出明确、独立的原因，而不是被静默跳过或被当作真实文档静默读取。*（已实现）*
 * 🔗 **可追溯的引用：** 每条结果都会引用 `source#index`——一个稳定的、可消歧的指针，指回被摄取的确切段落，可通过重新解析同一来源以确定的方式复原。*（已实现）*
 * 🎯 **确定性评分：** 排序是语料库和查询文本的纯函数，与解释器逐进程的哈希种子无关。*（已实现）*
+* 🌐 **真实的 JSON/HTTP API：** `serve` 子命令将同样的 TF-IDF 搜索作为一个长期运行的本地服务运行(默认 `127.0.0.1:8110`)，通过 `GET /query?q=...&top_k=N` 和 `GET /stats` 提供——语料库只在启动时摄取并建立索引一次，而非每次请求都重来。真实抓取的示例见 [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md)。*（已实现）*
 * 🤖 **有据可查的推理：** 答案严格基于所提供的项目文档。
 * 🎙️ **语音集成：** 与 VOICE-UI 集成，实现免提维护支持。
 * 🛠️ **代码感知：** 能够解释固件模块和 CAN 协议细节。
@@ -60,7 +61,7 @@ flowchart LR
 
 * **为何本子项目没有自己的硬件/固件/`os/`/`models/`。** 它完全运行在父项目已拥有的 CM5 + Hailo-10 M.2 模块上——将模型权重和 HydraOS 镜像集中保存在一处，可避免整个项目族中出现四份互不一致的、动辄数 GB 的副本。
 * **为何采用 `src/` 布局。** 使可安装的包（`hydra_umc_docs_qa`）与仓库根目录的工具（`bump_version.py`）分离，与生态系统中其他每个 Python 项目所使用的布局保持一致。
-* **为何入口点今天只打印身份/版本/角色。** 这是脚手架（scaffolding）阶段：证明该包在实际目标 Python 版本上能够正确安装、编译并被导入，是后续添加真正的向量搜索/RAG 摄取逻辑的前提条件，并使那部分后续工作与打包相关的问题相互隔离。
+* **为何裸调用（不带子命令）今天仍然只打印身份/版本/角色。** 这原本是脚手架（scaffolding）阶段的行为：在还没有任何真正的逻辑之前，证明该包在实际目标 Python 版本上能够正确安装、编译并被导入。今天它仍然是默认行为，作为一个快速检查“这确实已安装且能运行”的手段，与真实的 `query`（TF-IDF 搜索）和 `serve`（JSON/HTTP API）子命令并存——而这些子命令正是当初那套脚手架所要铺垫的前提条件。
 * **这如何融入生态系统的其余部分。** 本助手将其答案建立在生态系统自身的文档基础上，为其同级项目 HYDRA-UMC-SEMANTIC-PLANNER 提供了一个可在推理过程中查询的技术知识来源，并与 HYDRA-UMC-VOICE-UI 一同为现场技术人员提供免提故障排查支持。
 * **为何 `index.py` 的检索是真实的 TF-IDF，而非嵌入模型。** 基于嵌入的语义搜索需要一个真实的模型依赖（理想情况下是本 README 已经提到的 Hailo-10）——一个纯标准库实现的 TF-IDF/余弦相似度索引是真实的、可测试的，除 Python 本身外不需要任何依赖，让本项目今天就拥有一个可工作的检索内核，未来基于嵌入的索引可以在不改动 CLI 或摄取步骤的前提下，替换到同一个 `search()` 契约背后。
 * **为何一次没有匹配结果的查询会返回一个诚实的未命中，而非一个兜底答案。** v0 没有 LLM 合成步骤——一个词语与已摄取语料库没有重叠的问题会得到 `No relevant passages found`（见 `main.py`），而绝不会得到一个伪装成真实检索结果的编造或幻觉答案。
@@ -78,9 +79,10 @@ HYDRA-UMC-DOCS-QA/
 │   ├── ingest.py            # 真实的 Markdown 摄取 -> 按标题划分的 DocChunk
 │   ├── index.py              # 真实的 TF-IDF 索引（仅标准库）+ 余弦相似度搜索
 │   ├── api.py                  # 简洁的 JSON/HTTP 接口(基于 stdlib http.server),桥接真实的 `query` 逻辑
-│   └── main.py                # 入口点 + 真实的 `query` 子命令
+│   └── main.py                # 入口点 + 真实的 `query`/`serve` 子命令
 ├── tests/                   # 真实测试：摄取、白名单、排序、确定性、api、端到端 CLI
-├── docs/                    # 文档与技术手册
+├── docs/
+│   └── CLI_REFERENCE.md    # 完整的 CLI + JSON/HTTP API 参考，每个示例均来自真实运行
 ├── images/                  # 媒体与图表
 ├── systemd/
 │   └── hydra-umc-docs-qa.service # 本地 CM5 文档查询 API 的 systemd 单元
@@ -151,6 +153,8 @@ Top 1 passage(s) for: "firmware flashing"
 1. [0.289] manual.md#1 - Firmware Flashing
    Flash URTC firmware over SWD or JTAG using URTC-FLASHER.
 ```
+
+同样的搜索也可以通过 `./run.sh serve --docs manual.md`（默认 `127.0.0.1:8110`）作为长期运行的 JSON/HTTP API 使用。完整的命令与端点参考（每个示例均来自真实运行）见 [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md)。
 
 ### 🩺 故障排查
 
