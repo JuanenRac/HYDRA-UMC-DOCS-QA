@@ -1,0 +1,34 @@
+# =============================================================================
+# HYDRA-UMC-DOCS-QA - Local CM5 documentation-retrieval API systemd unit
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+# =============================================================================
+# --docs defaults to this repo's own README.md/CHANGELOG.md (main.py's
+# own _DEFAULT_DOCS) - a real but small demo corpus. Point --docs at a
+# broader set of real Markdown (other ecosystem repos' own READMEs) once
+# there is a deliberate decision about what this technical assistant
+# should actually be grounded in on a real deployment - not invented
+# here.
+[Unit]
+Description=HYDRA-UMC-DOCS-QA real TF-IDF documentation-retrieval API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hydra-umc-docs-qa
+Group=hydra-umc-docs-qa
+WorkingDirectory=/opt/hydra-umc/docs-qa
+Environment=PYTHONPATH=/opt/hydra-umc/docs-qa/src
+ExecStart=/usr/bin/python3 -m hydra_umc_docs_qa.main serve --addr 127.0.0.1 --port 8110
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectHome=true
+ProtectSystem=strict
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target
