@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "ecosystem": "HYDRA-UMC",
+  "name": "HYDRA-UMC-DOCS-QA",
+  "version": "0.0.8",
+  "role": "api",
+  "stack": "python",
+  "technologies": [
+    "Python",
+    "RAG",
+    "vector search"
+  ],
+  "deployment_target": "cm5",
+  "maturity": "established",
+  "family": "Cognitive AI Node",
+  "parent": "HYDRA-UMC-COGNITIVE-NODE",
+  "build": "python tools/build_test.py",
+  "notes": "Real v0 lexical retrieval: stdlib-only TF-IDF search (query subcommand) over ingested Markdown, defaulting to this repo's own README/CHANGELOG. Deterministic scoring (hash-seed-independent summation), traceable source#index citations, and a real document allowlist (only existing .md/.markdown paths are ingested; every other path is rejected with a distinct reason instead of being silently skipped or silently read as text). Honestly lexical, not yet embedding-based semantic search, and no LLM synthesis step - that and PDF ingestion are future work.",
+  "native_version": {
+    "file": "pyproject.toml",
+    "pattern": "^version\\s*=\\s*\"(\\d+)\\.(\\d+)\\.(\\d+)\""
+  },
+  "service": {
+    "systemd_unit": "hydra-umc-docs-qa.service"
+  }
+}
