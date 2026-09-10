@@ -7,7 +7,7 @@ bumped manually only. See `bump_version.py`.
 
 ## [0.0.8] - QA-01/QA-02/QA-03: fenced code, CJK/accented search, canonical citations
 
-- **QA-01 (found in an ecosystem-wide software-improvements audit, P2):**
+- **QA-01 (P2):**
   `ingest_markdown_text` treated any line starting with `#` as a real
   heading, even inside a fenced ` ``` `/`~~~` code block - a
   `# Shell comment` inside an Install section's ```sh fence wrongly split
@@ -15,7 +15,7 @@ bumped manually only. See `bump_version.py`.
   tracker: once inside a fence, only a line starting with the SAME
   character repeated at least as many times as the opener closes it, so
   every line in between (headings included) is kept as real body text.
-- **QA-02 (same audit, P1):** the tokenizer's old `[a-z0-9]+` pattern
+- **QA-02 (P1):** the tokenizer's old `[a-z0-9]+` pattern
   returned `[]` for any query with no Latin text at all - a real
   Chinese/Japanese-language question against this project's own
   translated README corpus could never match anything. Fixed with a real,
@@ -27,7 +27,7 @@ bumped manually only. See `bump_version.py`.
   Elasticsearch's own CJK bigram analyzer), not a call to another AI
   service. Both indexing and querying share this one `tokenize()`, so
   normalization stays identical on both sides.
-- **QA-03 (same audit, P2):** `ingest_markdown_file` identified every
+- **QA-03 (P2):** `ingest_markdown_file` identified every
   document by `path.name` alone, making `README.md` from two different
   repositories indistinguishable in a citation. New `canonical_source()`
   walks upward from the file for the nearest `hydra-umc.project.json` -
@@ -61,8 +61,7 @@ bumped manually only. See `bump_version.py`.
   already verified live on the real CM5.
 - **`ingest.py`'s `--docs` now accepts directories** (new
   `expand_doc_paths()`, recursive, sorted for a deterministic ingestion
-  order) - found in an ecosystem-wide software-improvements audit:
-  `--docs` used to require explicit file paths one by one, and the
+  order) - `--docs` used to require explicit file paths one by one, and the
   default corpus was just this repo's own README/CHANGELOG -
   contradicting the promise of having "read every manual... across the
   ecosystem". A caller can now point `--docs` at a whole checkout root

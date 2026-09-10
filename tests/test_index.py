@@ -36,7 +36,7 @@ def test_tokenize_lowercases_and_strips_punctuation() -> None:
 
 
 def test_tokenize_keeps_accented_latin_words_whole() -> None:
-    # QA-02 (ecosystem-wide software-improvements audit, P1): the old
+    # QA-02 (P1): the old
     # [a-z0-9]+ pattern silently dropped any accented character, so
     # "über" tokenized as just "ber" - a real, if partial, loss for
     # Spanish/French/Italian/German queries against this ecosystem's own

@@ -21,7 +21,7 @@ from dataclasses import dataclass
 
 from .ingest import DocChunk
 
-# QA-02 (ecosystem-wide software-improvements audit, P1): the old
+# QA-02 (P1): the old
 # ASCII-only [a-z0-9]+ pattern returned [] for any query with no Latin
 # text at all - a real Chinese/Japanese-language question against this
 # project's own translated README corpus could never match anything,
