@@ -16,6 +16,10 @@
 
 ---
 
+**Vérification d'honnêteté - ce qui fonctionne réellement aujourd'hui :** l'ingestion Markdown (`ingest.py`), l'index TF-IDF/similarité cosinus basé uniquement sur la stdlib (`index.py`), la surface JSON/HTTP `serve` (`api.py`) et la CLI `query`/`serve` (`main.py`) sont tous réels et testés (51 tests passants dans `tests/test_ingest.py`, `tests/test_index.py`, `tests/test_api.py`, `tests/test_cli.py`, `tests/test_determinism.py`). Il s'agit d'une véritable récupération lexicale (TF-IDF) sur du Markdown local uniquement - il n'y a pas encore d'étape de synthèse par LLM, donc une correspondance renvoie le passage cité mot pour mot, et une absence de correspondance renvoie un honnête `No relevant passages found` plutôt qu'une réponse générée. Ce qui est aspirationnel, non implémenté : les points "Voice Integration" (relais mains libres VOICE-UI) et "Code Awareness" (expliquer les modules firmware/les spécificités du protocole CAN) ci-dessous sont des éléments de feuille de route sans aucun code derrière dans ce dépôt aujourd'hui, et l'ingestion PDF au-delà de `.md`/`.markdown` n'existe pas non plus. Voir `CHANGELOG.md` pour ce qui a été livré exactement jusqu'à présent.
+
+---
+
 ## 1. 🛠️ APERÇU TECHNIQUE
 
 **HYDRA-UMC-DOCS-QA** est un assistant spécialisé de génération augmentée par récupération (RAG) conçu pour les techniciens et les développeurs sur site. Il fournit des réponses instantanées et fondées aux questions techniques sur l'écosystème HYDRA-UMC.
