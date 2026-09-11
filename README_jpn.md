@@ -16,6 +16,10 @@
 
 ---
 
+**正直な現状確認 - 今日実際に動くもの:** Markdown インジェスト(`ingest.py`)、標準ライブラリのみによる TF-IDF/コサイン類似度インデックス(`index.py`)、JSON/HTTP の `serve` インターフェース(`api.py`)、そして `query`/`serve` CLI(`main.py`)はすべて本物であり、テスト済みである(`tests/test_ingest.py`、`tests/test_index.py`、`tests/test_api.py`、`tests/test_cli.py`、`tests/test_determinism.py` で合計 51 件のテストが成功)。これはローカルの Markdown のみを対象とした本物の字句(TF-IDF)検索であり、まだ LLM による合成ステップは存在しない。そのため一致した場合は実際に引用された passage をそのまま返し、一致しない場合は生成された回答ではなく正直に `No relevant passages found` を返す。まだ実装されておらず願望段階にとどまるもの: 以下の "Voice Integration"(VOICE-UI とのハンズフリー連携)と "Code Awareness"(ファームウェアモジュールや CAN プロトコルの詳細説明)の項目は、今日この時点でこのリポジトリに一切コードの裏付けがないロードマップ項目であり、`.md`/`.markdown` を超える PDF インジェストも同様に存在しない。これまでに何が実際に出荷されたかは `CHANGELOG.md` を参照。
+
+---
+
 ## 1. 🛠️ 技術概要
 
 **HYDRA-UMC-DOCS-QA** は、現場の技術者や開発者向けに設計された専用の

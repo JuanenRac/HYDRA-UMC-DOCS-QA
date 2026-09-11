@@ -16,6 +16,10 @@
 
 ---
 
+**诚实核查 - 今天真正能运行的部分：** Markdown 摄取(`ingest.py`)、纯标准库实现的 TF-IDF/余弦相似度索引(`index.py`)、JSON/HTTP `serve` 接口(`api.py`)以及 `query`/`serve` 命令行(`main.py`)都是真实且经过测试的(51 个测试在 `tests/test_ingest.py`、`tests/test_index.py`、`tests/test_api.py`、`tests/test_cli.py`、`tests/test_determinism.py` 中全部通过)。这是仅针对本地 Markdown 的真实词法(TF-IDF)检索 - 目前还没有任何 LLM 合成步骤，因此命中时会原样返回被引用的段落，未命中时会诚实地返回 `No relevant passages found`，而不是生成一个答案。以下属于愿景、尚未实现的部分：下方的 "Voice Integration"(与 VOICE-UI 的免提中继)和 "Code Awareness"(解释固件模块/CAN 协议细节)这两条是路线图条目，今天在本仓库中背后没有任何代码，除 `.md`/`.markdown` 之外的 PDF 摄取也同样不存在。具体已交付的内容请见 `CHANGELOG.md`。
+
+---
+
 ## 1. 🛠️ 技术概述
 
 **HYDRA-UMC-DOCS-QA** 是一款专为现场技术人员和开发者设计的专用检索增强

@@ -74,6 +74,14 @@ bumped manually only. See `bump_version.py`.
   compile-checked (`py_compile`) `.py` files - it never ran `pytest`, so a
   regression in `tests/` could be merged without CI ever failing. CI-only
   fix, no runtime code changed, no version bump.
+- Added a "Honesty check" paragraph right after the badges in
+  `README.md` and all 6 translated READMEs, naming the real modules
+  (`ingest.py`/`index.py`/`api.py`/`main.py`) and the real test count
+  (51 passing). States plainly that this is real TF-IDF lexical
+  retrieval with no LLM synthesis step, and that the README's own
+  "Voice Integration" and "Code Awareness" bullets are roadmap items
+  with no code behind them yet. Documents the real, current state of
+  what's implemented vs. planned; docs-only, no version bump.
 
 ## [0.0.7] - Real v0: JSON/HTTP server mode, plus CM5 deployment
 
