@@ -139,6 +139,7 @@ class RejectionReason(str, Enum):
     MISSING = "missing"
     DISALLOWED_EXTENSION = "disallowed_extension"
     TOO_LARGE = "too_large"
+    UNDECODABLE = "undecodable"
 
 
 @dataclass(frozen=True)
@@ -151,6 +152,8 @@ class RejectedDocument:
             return f"{self.path}: file not found (no source)"
         if self.reason is RejectionReason.TOO_LARGE:
             return f"{self.path}: exceeds the {MAX_DOCUMENT_BYTES}-byte ingestion limit"
+        if self.reason is RejectionReason.UNDECODABLE:
+            return f"{self.path}: not valid UTF-8 - skipped, not ingested as garbled text"
         suffix = self.path.suffix or "(none)"
         return f"{self.path}: disallowed extension {suffix} - only {', '.join(sorted(ALLOWED_SUFFIXES))} are ingested"
 
@@ -207,5 +210,17 @@ def ingest_allowed_markdown_files(paths: Iterable[Path]) -> tuple[list[DocChunk]
         if issue is not None:
             rejected.append(issue)
             continue
-        chunks.extend(ingest_markdown_file(path))
+        try:
+            chunks.extend(ingest_markdown_file(path))
+        except UnicodeDecodeError:
+            # Real fix: a single file with invalid UTF-8 or a mixed
+            # encoding used to crash read_text() uncaught here, taking
+            # down the whole `query`/HTTP request over every OTHER real,
+            # well-formed document already ingested alongside it. Now
+            # reported back as a real, distinct RejectedDocument - the
+            # same honest "tell the caller why, don't silently drop or
+            # silently corrupt" contract validate_doc_path()'s own
+            # rejections already follow - instead of an unhandled
+            # exception ending the whole ingestion run.
+            rejected.append(RejectedDocument(path=path, reason=RejectionReason.UNDECODABLE))
     return chunks, rejected

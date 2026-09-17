@@ -5,6 +5,17 @@ version number follows this ecosystem's "odometer" scheme: PATCH +1 on
 every real build, rolling into MINOR past 9 (`0.0.9` -> `0.1.0`); MAJOR is
 bumped manually only. See `bump_version.py`.
 
+## [0.0.9] - A file with invalid UTF-8 is now rejected, not an uncaught crash
+
+`ingest_allowed_markdown_files()` used to call `read_text(encoding="utf-8")` on every real, allowed
+document with no handling for invalid or mixed-encoding bytes - a single malformed `.md` file (a stray
+binary paste, a wrong-encoding save) raised an uncaught `UnicodeDecodeError` that crashed the whole
+ingestion run, taking down every OTHER real, well-formed document passed in alongside it. Such a file
+is now reported back as a real, distinct `RejectedDocument` (`RejectionReason.UNDECODABLE`) - the same
+honest "tell the caller why, don't silently drop" contract every other rejection already follows -
+instead of an unhandled exception. New test proves a mix of one valid and one invalid file still
+ingests the valid one and reports the invalid one by name.
+
 ## [0.0.8] - QA-01/QA-02/QA-03: fenced code, CJK/accented search, canonical citations
 
 - **QA-01 (P2):**

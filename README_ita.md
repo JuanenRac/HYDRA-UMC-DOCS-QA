@@ -186,7 +186,7 @@ suite di test (`pytest tests/`). Output atteso di un `run.sh` senza
 argomenti:
 
 ```text
-HYDRA-UMC-DOCS-QA v0.0.8
+HYDRA-UMC-DOCS-QA v0.0.9
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 
