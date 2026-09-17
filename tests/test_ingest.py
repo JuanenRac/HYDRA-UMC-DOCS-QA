@@ -244,6 +244,25 @@ def test_ingest_allowed_markdown_files_separates_valid_from_rejected(tmp_path: P
     }
 
 
+def test_ingest_allowed_markdown_files_rejects_invalid_utf8_instead_of_crashing(tmp_path: Path) -> None:
+    # Real regression: a single file with invalid UTF-8 bytes used to
+    # raise an uncaught UnicodeDecodeError out of read_text(), crashing
+    # the whole ingestion run - including every OTHER real, well-formed
+    # document passed in alongside it.
+    good = tmp_path / "a.md"
+    good.write_text("# A\nContent A.\n", encoding="utf-8")
+    bad = tmp_path / "bad.md"
+    bad.write_bytes(b"\xff\xfe not valid utf-8 \x80\x81")
+
+    chunks, rejected = ingest_allowed_markdown_files([good, bad])
+
+    assert len(chunks) == 1
+    assert chunks[0].source == "a.md"
+    reasons = {doc.path: doc.reason for doc in rejected}
+    assert reasons == {bad: RejectionReason.UNDECODABLE}
+    assert "not valid UTF-8" in rejected[0].describe()
+
+
 def test_ingest_allowed_markdown_files_accepts_uppercase_and_markdown_suffix(tmp_path: Path) -> None:
     upper = tmp_path / "UPPER.MD"
     upper.write_text("# Upper\nContent.\n", encoding="utf-8")
