@@ -187,7 +187,7 @@ exécutent la vraie suite de tests (`pytest tests/`). Sortie attendue d'un
 `run.sh` sans argument :
 
 ```text
-HYDRA-UMC-DOCS-QA v0.0.9
+HYDRA-UMC-DOCS-QA v0.1.0
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 

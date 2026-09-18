@@ -128,7 +128,7 @@ run.bat
 `run.sh` 的预期输出：
 
 ```text
-HYDRA-UMC-DOCS-QA v0.0.9
+HYDRA-UMC-DOCS-QA v0.1.0
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 
