@@ -5,6 +5,25 @@ version number follows this ecosystem's "odometer" scheme: PATCH +1 on
 every real build, rolling into MINOR past 9 (`0.0.9` -> `0.1.0`); MAJOR is
 bumped manually only. See `bump_version.py`.
 
+## [0.1.0] - Disk-persisted index cache for `query`, real matched-term highlighting
+
+- **Disk-persisted TF-IDF index cache:** the CLI's `query` subcommand
+  used to re-ingest and re-index the whole corpus from scratch on every
+  single invocation (unlike `serve`, which already built its index once
+  at startup). `query` now persists the built index to disk (`pickle`,
+  keyed by each document's real resolved path/size/mtime) and reuses it
+  on a later invocation against the exact same, unchanged documents,
+  falling back to a real from-scratch rebuild on any cache miss,
+  corruption, or content change.
+- **Matched-term highlighting:** `query`'s console output now bolds the
+  real query terms it finds inside each printed snippet, using the same
+  `tokenize()` normalization the TF-IDF index itself is built and
+  searched with. Plain ANSI SGR codes rather than a `rich` dependency -
+  this project is deliberately stdlib-only, and a handful of terms in
+  already-printed text doesn't warrant a terminal-rendering library.
+  Only applied when stdout is a real terminal and `NO_COLOR` is unset,
+  so piped/redirected output stays plain.
+
 ## [0.0.9] - A file with invalid UTF-8 is now rejected, not an uncaught crash
 
 `ingest_allowed_markdown_files()` used to call `read_text(encoding="utf-8")` on every real, allowed

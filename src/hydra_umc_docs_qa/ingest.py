@@ -195,6 +195,25 @@ def expand_doc_paths(paths: Iterable[Path]) -> list[Path]:
     return expanded
 
 
+def partition_allowed_paths(paths: Iterable[Path]) -> tuple[list[Path], list[RejectedDocument]]:
+    """Real allowlist gate WITHOUT reading any file content: expands
+    directories, then validates every resulting path, splitting it into
+    (paths safe to read, real rejections). Exists as its own step -
+    separate from `ingest_allowed_markdown_files` below - so a caller can
+    compute a real content-fingerprint cache key (path/size/mtime) from
+    the valid paths BEFORE paying the cost of actually reading and
+    tokenizing them; see cache.py's own `compute_cache_key`."""
+    valid: list[Path] = []
+    rejected: list[RejectedDocument] = []
+    for path in expand_doc_paths(paths):
+        issue = validate_doc_path(path)
+        if issue is not None:
+            rejected.append(issue)
+        else:
+            valid.append(path)
+    return valid, rejected
+
+
 def ingest_allowed_markdown_files(paths: Iterable[Path]) -> tuple[list[DocChunk], list[RejectedDocument]]:
     """Ingest only real, permitted Markdown documents. Every path that
     fails `validate_doc_path` is reported back as a `RejectedDocument`

@@ -190,7 +190,7 @@ run.bat
 aus (`pytest tests/`). Erwartete Ausgabe eines `run.sh` ohne Argumente:
 
 ```text
-HYDRA-UMC-DOCS-QA v0.0.9
+HYDRA-UMC-DOCS-QA v0.1.0
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 

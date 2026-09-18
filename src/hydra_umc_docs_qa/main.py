@@ -19,7 +19,9 @@ from pathlib import Path
 
 from . import __version__
 from .api import DocsQaServer, build_server_index
-from .ingest import ingest_allowed_markdown_files
+from .cache import compute_cache_key, load_cached_index, save_cached_index
+from .highlight import highlight_terms
+from .ingest import RejectedDocument, RejectionReason, ingest_markdown_file, partition_allowed_paths
 from .index import build_index, search
 
 PROJECT_NAME = "HYDRA-UMC-DOCS-QA"
@@ -43,15 +45,36 @@ def _print_identity() -> None:
 
 
 def _run_query(question: str, docs: list[Path], top_k: int) -> int:
-    chunks, rejected = ingest_allowed_markdown_files(docs)
+    valid_paths, rejected = partition_allowed_paths(docs)
     for doc in rejected:
         print(f"REJECTED {doc.describe()}")
 
-    if not chunks:
+    # Real disk-persisted index cache (cache.py): a cache hit here skips
+    # re-reading and re-tokenizing every document and rebuilding the
+    # whole TF-IDF index from scratch - the real cost `query` otherwise
+    # pays on every single invocation, even against an unchanged corpus.
+    cache_key = compute_cache_key(valid_paths)
+    cached = load_cached_index(cache_key)
+    if cached is not None:
+        index, undecodable = cached
+    else:
+        chunks = []
+        undecodable = []
+        for path in valid_paths:
+            try:
+                chunks.extend(ingest_markdown_file(path))
+            except UnicodeDecodeError:
+                undecodable.append(RejectedDocument(path=path, reason=RejectionReason.UNDECODABLE))
+        index = build_index(chunks)
+        save_cached_index(cache_key, index, undecodable)
+
+    for doc in undecodable:
+        print(f"REJECTED {doc.describe()}")
+
+    if not index.chunks:
         print("No documents ingested - check the --docs paths.")
         return 1
 
-    index = build_index(chunks)
     try:
         results = search(index, question, top_k=top_k)
     except ValueError as exc:
@@ -72,6 +95,7 @@ def _run_query(question: str, docs: list[Path], top_k: int) -> int:
         snippet = result.chunk.text.replace("\n", " ").strip()
         if len(snippet) > _SNIPPET_LEN:
             snippet = snippet[:_SNIPPET_LEN].rstrip() + "..."
+        snippet = highlight_terms(snippet, question)
         print(f"{rank}. [{result.score:.3f}] {result.chunk.source}#{result.chunk.index} - {heading}")
         print(f"   {snippet}\n")
     return 0
