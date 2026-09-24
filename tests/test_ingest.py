@@ -75,7 +75,7 @@ def test_ingest_markdown_files_skips_missing_paths(tmp_path: Path) -> None:
 
 
 def test_heading_like_lines_inside_a_fenced_code_block_do_not_split_the_section() -> None:
-    # QA-01 (P2): a real
+    # a real
     # "# Shell comment" line inside a ```sh fence used to be read as a
     # genuine heading, wrongly splitting the Install section around it.
     text = (
@@ -118,7 +118,7 @@ def test_a_shorter_fence_of_the_other_character_does_not_close_the_block() -> No
 
 
 def test_canonical_source_qualifies_with_the_owning_project_directory(tmp_path: Path) -> None:
-    # QA-03 (P2): path.name
+    # path.name
     # alone makes README.md from two different repositories indistinguishable.
     project = tmp_path / "HYDRA-UMC-FAKE-PROJECT"
     (project / "docs").mkdir(parents=True)

@@ -56,7 +56,7 @@ def ingest_markdown_text(text: str, *, source: str) -> list[DocChunk]:
     chunks: list[DocChunk] = []
     heading = ""
     body_lines: list[str] = []
-    # QA-01 (P2): a line like
+    # a line like
     # "# Shell comment" inside a ```sh fenced block used to be read as a
     # real heading, wrongly splitting the section it lives in. `fence`
     # holds the exact marker (backticks or tildes, with its real length)
@@ -93,7 +93,7 @@ def ingest_markdown_text(text: str, *, source: str) -> list[DocChunk]:
 
 
 def canonical_source(path: Path) -> str:
-    """QA-03 (P2): `path.name`
+    """`path.name`
     alone makes README.md from two different repositories indistinguishable
     in citations. Walks upward from the file looking for the nearest
     `hydra-umc.project.json` - the one manifest every real repo in this
