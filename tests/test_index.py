@@ -36,7 +36,7 @@ def test_tokenize_lowercases_and_strips_punctuation() -> None:
 
 
 def test_tokenize_keeps_accented_latin_words_whole() -> None:
-    # QA-02 (P1): the old
+    # the old
     # [a-z0-9]+ pattern silently dropped any accented character, so
     # "über" tokenized as just "ber" - a real, if partial, loss for
     # Spanish/French/Italian/German queries against this ecosystem's own
@@ -45,7 +45,7 @@ def test_tokenize_keeps_accented_latin_words_whole() -> None:
 
 
 def test_tokenize_splits_cjk_runs_into_overlapping_bigrams() -> None:
-    # QA-02: CJK text has no whitespace between words - the old
+    # CJK text has no whitespace between words - the old
     # ASCII-only pattern returned [] for it entirely (a real Chinese/
     # Japanese query could never match anything), and a naive \w+-style
     # fix would instead swallow an entire run into one giant token that
@@ -103,7 +103,7 @@ def test_search_finds_the_right_japanese_section_by_real_term_overlap() -> None:
 
 
 def test_search_finds_the_right_spanish_section_with_accented_terms() -> None:
-    # Closes the same QA-02 criterion for a fifth language: "niño",
+    # Closes the same criterion for a fifth language: "niño",
     # "cableado" and "última" all carry a real accented character or
     # tilde that the old ASCII-only tokenizer would have mangled.
     chunks = [
