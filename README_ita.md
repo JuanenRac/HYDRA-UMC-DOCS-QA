@@ -4,7 +4,7 @@
 
 # 📚 HYDRA-UMC-DOCS-QA
 
-<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | 🇮🇹 <b>Italiano</b> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 简体中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a></p>
+<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | 🇮🇹 <b>Italiano</b> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 简体中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
 ### 🤖 Assistente AI basato su RAG per la manutenzione e la documentazione dell'hardware
 
@@ -16,7 +16,7 @@
 
 ---
 
-**Controllo di onestà - cosa funziona davvero oggi:** l'ingestione Markdown (`ingest.py`), l'indice TF-IDF/similarità coseno basato solo sulla stdlib (`index.py`), la superficie JSON/HTTP `serve` (`api.py`) e la CLI `query`/`serve` (`main.py`) sono tutti reali e testati (61 test superati in `tests/test_ingest.py`, `tests/test_index.py`, `tests/test_api.py`, `tests/test_cli.py`, `tests/test_determinism.py`). Questo è un vero recupero lessicale (TF-IDF) solo su Markdown locale - non esiste ancora alcun passaggio di sintesi tramite LLM, quindi una corrispondenza restituisce il passaggio citato testualmente, e una non corrispondenza restituisce un onesto `No relevant passages found` invece di una risposta generata. Ciò che è aspirazionale, non implementato: le voci "Voice Integration" (relay mani libere VOICE-UI) e "Code Awareness" (spiegare moduli firmware/dettagli del protocollo CAN) qui sotto sono elementi di roadmap senza alcun codice dietro in questo repository oggi, e nemmeno l'ingestione PDF oltre `.md`/`.markdown` esiste. Vedi `CHANGELOG.md` per ciò che è stato consegnato esattamente finora.
+**Controllo di onestà - cosa funziona davvero oggi:** l'ingestione Markdown (`ingest.py`), l'indice TF-IDF/similarità coseno basato solo sulla stdlib (`index.py`), la superficie JSON/HTTP `serve` (`api.py`) e la CLI `query`/`serve` (`main.py`) sono tutti reali e testati (65 test superati in `tests/test_ingest.py`, `tests/test_index.py`, `tests/test_api.py`, `tests/test_cli.py`, `tests/test_determinism.py`). Questo è un vero recupero lessicale (TF-IDF) solo su Markdown locale - non esiste ancora alcun passaggio di sintesi tramite LLM, quindi una corrispondenza restituisce il passaggio citato testualmente, e una non corrispondenza restituisce un onesto `No relevant passages found` invece di una risposta generata. Ciò che è aspirazionale, non implementato: le voci "Voice Integration" (relay mani libere VOICE-UI) e "Code Awareness" (spiegare moduli firmware/dettagli del protocollo CAN) qui sotto sono elementi di roadmap senza alcun codice dietro in questo repository oggi, e nemmeno l'ingestione PDF oltre `.md`/`.markdown` esiste. Vedi `CHANGELOG.md` per ciò che è stato consegnato esattamente finora.
 
 ---
 
@@ -31,6 +31,7 @@ Ha "letto" tutti i manuali, la documentazione degli schemi e il codice sorgente 
 * 🔒 **Vera lista consentiti dei documenti:** vengono ingeriti e citati solo i file `.md`/`.markdown` realmente esistenti - qualsiasi altro percorso `--docs` (mancante, o di un tipo di file non consentito) viene rifiutato con un motivo distinto e stampato, invece di essere ignorato silenziosamente o letto come se fosse documentazione reale. *(implementato)*
 * 🔗 **Citazioni tracciabili:** ogni risultato cita `source#index` - un puntatore stabile e univoco al passaggio esatto ingerito, recuperabile in modo deterministico rianalizzando la stessa fonte. *(implementato)*
 * 🎯 **Punteggio deterministico:** il ranking è una funzione pura del corpus e del testo della query, indipendente dal seed hash per processo dell'interprete. *(implementato)*
+* 🗄️ **Cache dell'indice che non può eseguire codice:** il `query` della CLI salva l'indice costruito nella directory di cache dell'utente (`HYDRA_UMC_DOCS_QA_CACHE_DIR`, altrimenti `XDG_CACHE_HOME`, altrimenti `~/.cache/hydra-umc-docs-qa`), con una chiave formata da percorso, dimensione e data di modifica di ogni documento. Ora è un JSON validato; prima era un `pickle`, che esegue qualunque codice porti il file, per cui qualsiasi altro processo dello stesso utente poteva depositarvi un file e farlo eseguire dal `query` successivo. Un file piazzato, troncato o di forma errata è semplicemente un cache miss. *(implementato)*
 * 🌐 **Vera API JSON/HTTP:** il sottocomando `serve` esegue esattamente la stessa ricerca TF-IDF come servizio locale di lunga durata (default `127.0.0.1:8110`) tramite `GET /query?q=...&top_k=N` e `GET /stats` - il corpus viene ingerito e indicizzato UNA sola volta all'avvio, non a ogni richiesta. Vedi [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) per esempi reali catturati. *(implementato)*
 * 🤖 **Ragionamento fondato:** Le risposte si basano rigorosamente sulla documentazione del progetto fornita.
 * 🎙️ **Integrazione vocale:** Integrato con VOICE-UI per il supporto alla manutenzione a mani libere.
@@ -138,6 +139,7 @@ HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
 │   ├── ingest.py            # Ingestione Markdown reale -> DocChunk per intestazione
 │   ├── index.py              # Indice TF-IDF reale (solo stdlib) + ricerca per similarità coseno
+│   ├── cache.py              # Cache su disco dell'indice costruito (JSON validato, mai pickle) per `query` ripetuti
 │   ├── api.py                  # Superficie JSON/HTTP semplice (http.server di stdlib) sulla vera logica `query`
 │   └── main.py                # Punto di ingresso + sottocomandi reali `query`/`serve`
 ├── tests/                   # Test reali: ingestione, lista consentiti, ranking, determinismo, api, CLI end-to-end
@@ -186,7 +188,7 @@ suite di test (`pytest tests/`). Output atteso di un `run.sh` senza
 argomenti:
 
 ```text
-HYDRA-UMC-DOCS-QA v0.1.0
+HYDRA-UMC-DOCS-QA v0.1.1
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 

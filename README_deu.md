@@ -4,7 +4,7 @@
 
 # 📚 HYDRA-UMC-DOCS-QA
 
-<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | 🇩🇪 <b>Deutsch</b> | <a href="README_zho.md">🇨🇳 简体中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a></p>
+<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | 🇩🇪 <b>Deutsch</b> | <a href="README_zho.md">🇨🇳 简体中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
 ### 🤖 RAG-basierter KI-Assistent für Hardware-Wartung & Dokumentation
 
@@ -16,7 +16,7 @@
 
 ---
 
-**Ehrlichkeitscheck - was heute wirklich läuft:** die Markdown-Ingestion (`ingest.py`), der reine Stdlib-TF-IDF/Kosinus-Ähnlichkeitsindex (`index.py`), die JSON/HTTP-`serve`-Oberfläche (`api.py`) und die `query`/`serve`-CLI (`main.py`) sind alle real und getestet (61 bestandene Tests in `tests/test_ingest.py`, `tests/test_index.py`, `tests/test_api.py`, `tests/test_cli.py`, `tests/test_determinism.py`). Dies ist echte lexikalische (TF-IDF) Suche ausschließlich über lokales Markdown - es gibt noch keinen LLM-Syntheseschritt, sodass ein Treffer die tatsächlich zitierte Passage wörtlich zurückgibt und ein Nicht-Treffer ein ehrliches `No relevant passages found` statt einer generierten Antwort liefert. Was rein aspirativ ist und nicht implementiert: die unten aufgeführten Punkte "Voice Integration" (freihändiges VOICE-UI-Relay) und "Code Awareness" (Erklärung von Firmware-Modulen/CAN-Protokolldetails) sind Roadmap-Punkte ohne jeglichen Code dahinter in diesem Repository heute, und auch eine PDF-Ingestion über `.md`/`.markdown` hinaus existiert nicht. Siehe `CHANGELOG.md` für das, was bisher genau ausgeliefert wurde.
+**Ehrlichkeitscheck - was heute wirklich läuft:** die Markdown-Ingestion (`ingest.py`), der reine Stdlib-TF-IDF/Kosinus-Ähnlichkeitsindex (`index.py`), die JSON/HTTP-`serve`-Oberfläche (`api.py`) und die `query`/`serve`-CLI (`main.py`) sind alle real und getestet (65 bestandene Tests in `tests/test_ingest.py`, `tests/test_index.py`, `tests/test_api.py`, `tests/test_cli.py`, `tests/test_determinism.py`). Dies ist echte lexikalische (TF-IDF) Suche ausschließlich über lokales Markdown - es gibt noch keinen LLM-Syntheseschritt, sodass ein Treffer die tatsächlich zitierte Passage wörtlich zurückgibt und ein Nicht-Treffer ein ehrliches `No relevant passages found` statt einer generierten Antwort liefert. Was rein aspirativ ist und nicht implementiert: die unten aufgeführten Punkte "Voice Integration" (freihändiges VOICE-UI-Relay) und "Code Awareness" (Erklärung von Firmware-Modulen/CAN-Protokolldetails) sind Roadmap-Punkte ohne jeglichen Code dahinter in diesem Repository heute, und auch eine PDF-Ingestion über `.md`/`.markdown` hinaus existiert nicht. Siehe `CHANGELOG.md` für das, was bisher genau ausgeliefert wurde.
 
 ---
 
@@ -31,6 +31,7 @@ Er hat alle Handbücher, Schaltdokumentationen und den Quellcode des gesamten Ö
 * 🔒 **Echte Dokument-Positivliste:** Es werden ausschließlich existierende `.md`/`.markdown`-Dateien eingelesen und zitiert - jeder andere `--docs`-Pfad (fehlend oder ein nicht zulässiger Dateityp) wird mit einem eigenen, ausgegebenen Grund abgelehnt, statt stillschweigend übersprungen oder wie echte Dokumentation gelesen zu werden. *(implementiert)*
 * 🔗 **Nachvollziehbare Zitate:** Jedes Ergebnis zitiert `source#index` - einen stabilen, eindeutigen Verweis auf die exakte eingelesene Passage, deterministisch wiederherstellbar durch erneutes Parsen derselben Quelle. *(implementiert)*
 * 🎯 **Deterministisches Scoring:** Das Ranking ist eine reine Funktion von Korpus und Anfrage-Text, unabhängig vom Hash-Seed des jeweiligen Interpreter-Prozesses. *(implementiert)*
+* 🗄️ **Index-Cache, der keinen Code ausführen kann:** Das `query` der CLI legt den gebauten Index im Cache-Verzeichnis des Benutzers ab (`HYDRA_UMC_DOCS_QA_CACHE_DIR`, sonst `XDG_CACHE_HOME`, sonst `~/.cache/hydra-umc-docs-qa`), mit einem Schlüssel aus Pfad, Größe und Änderungszeit jedes Dokuments. Es ist jetzt eine validierte JSON-Datei; früher war es ein `pickle`, der beliebigen Code der Datei ausführt, sodass jeder andere Prozess desselben Benutzers dort eine Datei ablegen und vom nächsten `query` ausführen lassen konnte. Eine untergeschobene, abgeschnittene oder falsch geformte Datei ist schlicht ein Cache-Fehltreffer. *(implementiert)*
 * 🌐 **Echte JSON/HTTP-API:** Der `serve`-Unterbefehl führt genau dieselbe TF-IDF-Suche als langlebigen lokalen Dienst aus (Standard `127.0.0.1:8110`) über `GET /query?q=...&top_k=N` und `GET /stats` - der Korpus wird nur EINMAL beim Start eingelesen und indiziert, nicht bei jeder Anfrage. Siehe [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) für echte, erfasste Beispiele. *(implementiert)*
 * 🤖 **Fundiertes Denken:** Antworten basieren strikt auf der bereitgestellten Projektdokumentation.
 * 🎙️ **Sprachintegration:** Integriert in VOICE-UI für freihändige Wartungsunterstützung.
@@ -142,6 +143,7 @@ HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
 │   ├── ingest.py            # Echte Markdown-Ingestion -> DocChunks pro Überschrift
 │   ├── index.py              # Echter TF-IDF-Index (nur stdlib) + Kosinus-Ähnlichkeitssuche
+│   ├── cache.py              # Festplatten-Cache des gebauten Index (validiertes JSON, nie pickle) für wiederholte `query`-Läufe
 │   ├── api.py                  # Einfache JSON/HTTP-Oberfläche (stdlib http.server) über die echte `query`-Logik
 │   └── main.py                # Einstiegspunkt + echte `query`/`serve`-Subcommands
 ├── tests/                   # Echte Tests: Ingestion, Positivliste, Ranking, Determinismus, api, End-to-End-CLI
@@ -190,7 +192,7 @@ run.bat
 aus (`pytest tests/`). Erwartete Ausgabe eines `run.sh` ohne Argumente:
 
 ```text
-HYDRA-UMC-DOCS-QA v0.1.0
+HYDRA-UMC-DOCS-QA v0.1.1
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 

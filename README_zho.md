@@ -4,7 +4,7 @@
 
 # 📚 HYDRA-UMC-DOCS-QA
 
-<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | 🇨🇳 <b>简体中文</b> | <a href="README_jpn.md">🇯🇵 日本語</a></p>
+<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | 🇨🇳 <b>简体中文</b> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
 ### 🤖 基于 RAG 的硬件维护与文档 AI 助手
 
@@ -16,7 +16,7 @@
 
 ---
 
-**诚实核查 - 今天真正能运行的部分：** Markdown 摄取(`ingest.py`)、纯标准库实现的 TF-IDF/余弦相似度索引(`index.py`)、JSON/HTTP `serve` 接口(`api.py`)以及 `query`/`serve` 命令行(`main.py`)都是真实且经过测试的(61 个测试在 `tests/test_ingest.py`、`tests/test_index.py`、`tests/test_api.py`、`tests/test_cli.py`、`tests/test_determinism.py` 中全部通过)。这是仅针对本地 Markdown 的真实词法(TF-IDF)检索 - 目前还没有任何 LLM 合成步骤，因此命中时会原样返回被引用的段落，未命中时会诚实地返回 `No relevant passages found`，而不是生成一个答案。以下属于愿景、尚未实现的部分：下方的 "Voice Integration"(与 VOICE-UI 的免提中继)和 "Code Awareness"(解释固件模块/CAN 协议细节)这两条是路线图条目，今天在本仓库中背后没有任何代码，除 `.md`/`.markdown` 之外的 PDF 摄取也同样不存在。具体已交付的内容请见 `CHANGELOG.md`。
+**诚实核查 - 今天真正能运行的部分：** Markdown 摄取(`ingest.py`)、纯标准库实现的 TF-IDF/余弦相似度索引(`index.py`)、JSON/HTTP `serve` 接口(`api.py`)以及 `query`/`serve` 命令行(`main.py`)都是真实且经过测试的(65 个测试在 `tests/test_ingest.py`、`tests/test_index.py`、`tests/test_api.py`、`tests/test_cli.py`、`tests/test_determinism.py` 中全部通过)。这是仅针对本地 Markdown 的真实词法(TF-IDF)检索 - 目前还没有任何 LLM 合成步骤，因此命中时会原样返回被引用的段落，未命中时会诚实地返回 `No relevant passages found`，而不是生成一个答案。以下属于愿景、尚未实现的部分：下方的 "Voice Integration"(与 VOICE-UI 的免提中继)和 "Code Awareness"(解释固件模块/CAN 协议细节)这两条是路线图条目，今天在本仓库中背后没有任何代码，除 `.md`/`.markdown` 之外的 PDF 摄取也同样不存在。具体已交付的内容请见 `CHANGELOG.md`。
 
 ---
 
@@ -34,6 +34,7 @@
 * 🔒 **真实文档白名单：** 只有真实存在的 `.md`/`.markdown` 文件才会被摄取和引用——任何其他 `--docs` 路径（缺失，或文件类型不被允许）都会被拒绝，并打印出明确、独立的原因，而不是被静默跳过或被当作真实文档静默读取。*（已实现）*
 * 🔗 **可追溯的引用：** 每条结果都会引用 `source#index`——一个稳定的、可消歧的指针，指回被摄取的确切段落，可通过重新解析同一来源以确定的方式复原。*（已实现）*
 * 🎯 **确定性评分：** 排序是语料库和查询文本的纯函数，与解释器逐进程的哈希种子无关。*（已实现）*
+* 🗄️ **无法执行代码的索引缓存：** CLI 的 `query` 会把构建好的索引缓存到用户缓存目录（`HYDRA_UMC_DOCS_QA_CACHE_DIR`，否则 `XDG_CACHE_HOME`，否则 `~/.cache/hydra-umc-docs-qa`），缓存键由每个文档的路径、大小和修改时间构成。现在它是经过校验的 JSON 文件；以前是 `pickle`，会执行文件携带的任何代码，因此同一用户的任何其他进程都可以在那里放置文件，并让下一次 `query` 执行它。被放置、被截断或结构错误的文件只会被当作一次缓存未命中。*（已实现）*
 * 🌐 **真实的 JSON/HTTP API：** `serve` 子命令将同样的 TF-IDF 搜索作为一个长期运行的本地服务运行(默认 `127.0.0.1:8110`)，通过 `GET /query?q=...&top_k=N` 和 `GET /stats` 提供——语料库只在启动时摄取并建立索引一次，而非每次请求都重来。真实抓取的示例见 [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md)。*（已实现）*
 * 🤖 **有据可查的推理：** 答案严格基于所提供的项目文档。
 * 🎙️ **语音集成：** 与 VOICE-UI 集成，实现免提维护支持。
@@ -82,6 +83,7 @@ HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
 │   ├── ingest.py            # 真实的 Markdown 摄取 -> 按标题划分的 DocChunk
 │   ├── index.py              # 真实的 TF-IDF 索引（仅标准库）+ 余弦相似度搜索
+│   ├── cache.py              # 已构建索引的磁盘缓存（经校验的 JSON，绝不使用 pickle），供重复的 `query` 使用
 │   ├── api.py                  # 简洁的 JSON/HTTP 接口(基于 stdlib http.server),桥接真实的 `query` 逻辑
 │   └── main.py                # 入口点 + 真实的 `query`/`serve` 子命令
 ├── tests/                   # 真实测试：摄取、白名单、排序、确定性、api、端到端 CLI
@@ -128,7 +130,7 @@ run.bat
 `run.sh` 的预期输出：
 
 ```text
-HYDRA-UMC-DOCS-QA v0.1.0
+HYDRA-UMC-DOCS-QA v0.1.1
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 

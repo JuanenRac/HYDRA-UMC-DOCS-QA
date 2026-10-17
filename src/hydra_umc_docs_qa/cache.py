@@ -12,9 +12,14 @@ at startup and reuses it. That is fine for a single ad-hoc question, but
 wasteful for a caller running `query` repeatedly (a shell loop, a human
 iterating on phrasing) against the same, unchanged corpus.
 
-Real, stdlib-only persistence: `pickle`, matching this project's own
+Real, stdlib-only persistence: JSON, matching this project's own
 stdlib-only convention (no numpy/sqlite dependency needed for a handful
-of Python dataclasses and dicts of floats). The cache key is a real
+of Python dataclasses and dicts of floats). It used to be `pickle`, but
+loading a pickle executes whatever the file tells it to, and the cache sits
+in the user's home directory where any other process of the same user can
+write: a planted `.pkl` ran code the next time `query` was used. A JSON file
+can only ever be data, and it is validated field by field before use. The
+cache key is a real
 content fingerprint - the resolved path, size and mtime of every
 document that will be ingested - so any real change to the corpus
 (edit, add, remove, rename) is a real cache miss, never a stale hit.
@@ -22,14 +27,15 @@ document that will be ingested - so any real change to the corpus
 from __future__ import annotations
 
 import hashlib
+import json
 import os
-import pickle
 from pathlib import Path
 
 from .index import TfidfIndex
-from .ingest import RejectedDocument
+from .ingest import DocChunk, RejectedDocument, RejectionReason
 
-_CACHE_FORMAT_VERSION = 1
+# 2: JSON instead of pickle (a version 1 file is a .pkl and is never read)
+_CACHE_FORMAT_VERSION = 2
 
 
 def cache_dir() -> Path:
@@ -63,7 +69,62 @@ def compute_cache_key(paths: list[Path]) -> str:
 
 
 def _cache_file(key: str) -> Path:
-    return cache_dir() / f"{key}.pkl"
+    return cache_dir() / f"{key}.json"
+
+
+def _is_number(value: object) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _weights(value: object) -> dict[str, float]:
+    """A term -> weight mapping, or ValueError: every key a string and every
+    value a finite number."""
+    if not isinstance(value, dict):
+        raise ValueError("expected an object of term weights")
+    out: dict[str, float] = {}
+    for term, weight in value.items():
+        if not isinstance(term, str) or not _is_number(weight) or weight != weight or weight in (float("inf"), float("-inf")):
+            raise ValueError("a term weight is not a finite number")
+        out[term] = float(weight)
+    return out
+
+
+def _index_from_json(data: object) -> TfidfIndex:
+    if not isinstance(data, dict):
+        raise ValueError("index is not an object")
+    raw_chunks = data.get("chunks")
+    raw_vectors = data.get("chunk_vectors")
+    if not isinstance(raw_chunks, list) or not isinstance(raw_vectors, list) or len(raw_chunks) != len(raw_vectors):
+        raise ValueError("chunks and chunk_vectors do not match")
+    chunks = []
+    for item in raw_chunks:
+        if not (isinstance(item, list) and len(item) == 4 and all(isinstance(x, str) for x in item[:3]) and isinstance(item[3], int) and not isinstance(item[3], bool)):
+            raise ValueError("a chunk is not [source, heading, text, index]")
+        chunks.append(DocChunk(source=item[0], heading=item[1], text=item[2], index=item[3]))
+    return TfidfIndex(
+        chunks=tuple(chunks),
+        idf=_weights(data.get("idf")),
+        chunk_vectors=tuple(_weights(v) for v in raw_vectors),
+    )
+
+
+def _index_to_json(index: TfidfIndex) -> dict[str, object]:
+    return {
+        "chunks": [[c.source, c.heading, c.text, c.index] for c in index.chunks],
+        "idf": index.idf,
+        "chunk_vectors": list(index.chunk_vectors),
+    }
+
+
+def _rejected_from_json(data: object) -> list[RejectedDocument]:
+    if not isinstance(data, list):
+        raise ValueError("undecodable is not a list")
+    out = []
+    for item in data:
+        if not (isinstance(item, list) and len(item) == 2 and all(isinstance(x, str) for x in item)):
+            raise ValueError("a rejected document is not [path, reason]")
+        out.append(RejectedDocument(path=Path(item[0]), reason=RejectionReason(item[1])))
+    return out
 
 
 def load_cached_index(key: str) -> tuple[TfidfIndex, list[RejectedDocument]] | None:
@@ -76,19 +137,16 @@ def load_cached_index(key: str) -> tuple[TfidfIndex, list[RejectedDocument]] | N
     if not path.is_file():
         return None
     try:
-        with path.open("rb") as f:
-            payload = pickle.load(f)
-    except (pickle.UnpicklingError, EOFError, OSError, AttributeError, ImportError, ValueError):
+        with path.open("r", encoding="utf-8") as f:
+            payload = json.load(f)
+        if not isinstance(payload, dict) or payload.get("format_version") != _CACHE_FORMAT_VERSION:
+            return None
+        if payload.get("key") != key:
+            return None
+        return _index_from_json(payload.get("index")), _rejected_from_json(payload.get("undecodable"))
+    except (OSError, ValueError, TypeError, RecursionError):
+        # json.JSONDecodeError is a ValueError; RejectionReason(...) raises ValueError too
         return None
-    if not isinstance(payload, dict) or payload.get("format_version") != _CACHE_FORMAT_VERSION:
-        return None
-    if payload.get("key") != key:
-        return None
-    index = payload.get("index")
-    undecodable = payload.get("undecodable")
-    if not isinstance(index, TfidfIndex) or not isinstance(undecodable, list):
-        return None
-    return index, undecodable
 
 
 def save_cached_index(key: str, index: TfidfIndex, undecodable: list[RejectedDocument]) -> None:
@@ -104,12 +162,12 @@ def save_cached_index(key: str, index: TfidfIndex, undecodable: list[RejectedDoc
         payload = {
             "format_version": _CACHE_FORMAT_VERSION,
             "key": key,
-            "index": index,
-            "undecodable": undecodable,
+            "index": _index_to_json(index),
+            "undecodable": [[str(doc.path), doc.reason.value] for doc in undecodable],
         }
-        tmp_path = directory / f".{key}.pkl.tmp"
-        with tmp_path.open("wb") as f:
-            pickle.dump(payload, f, protocol=pickle.HIGHEST_PROTOCOL)
+        tmp_path = directory / f".{key}.json.tmp"
+        with tmp_path.open("w", encoding="utf-8") as f:
+            json.dump(payload, f)
         tmp_path.replace(_cache_file(key))
     except OSError:
         pass

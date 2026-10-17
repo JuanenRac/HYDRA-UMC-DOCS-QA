@@ -71,6 +71,84 @@ def test_a_corrupted_cache_file_is_treated_as_a_real_miss_not_a_crash(tmp_path: 
 
     from hydra_umc_docs_qa.cache import _cache_file
 
-    _cache_file(key).write_bytes(b"not a real pickle payload")
+    _cache_file(key).write_bytes(b"not a real cache payload")
 
     assert load_cached_index(key) is None
+
+
+def _saved_index_file(tmp_path: Path):
+    from hydra_umc_docs_qa.cache import _cache_file
+
+    doc = tmp_path / "manual.md"
+    _write(doc, "# A\nSome content for the cache.\n")
+    key = compute_cache_key([doc])
+    save_cached_index(key, build_index(ingest_markdown_file(doc)), [])
+    return key, _cache_file(key)
+
+
+def test_the_cache_file_is_plain_json_data(tmp_path: Path) -> None:
+    import json
+
+    _key, file = _saved_index_file(tmp_path)
+
+    payload = json.loads(file.read_text(encoding="utf-8"))
+
+    assert payload["format_version"] == 2
+    assert file.suffix == ".json"
+
+
+def test_a_planted_pickle_is_never_executed(tmp_path: Path) -> None:
+    # The old cache was a pickle, which runs code on load. A file an attacker
+    # (any other process of the same user) leaves in the cache directory must
+    # come back as a plain miss and must not run.
+    import pickle
+
+    from hydra_umc_docs_qa.cache import _cache_file
+
+    marker = tmp_path / "executed.txt"
+
+    class Evil:
+        def __reduce__(self):
+            return (Path(str(marker)).write_text, ("pwned",))
+
+    doc = tmp_path / "manual.md"
+    _write(doc, "# A\nSome content.\n")
+    key = compute_cache_key([doc])
+    _cache_file(key).parent.mkdir(parents=True, exist_ok=True)
+    _cache_file(key).write_bytes(pickle.dumps({"format_version": 2, "key": key, "index": Evil(), "undecodable": []}))
+    (_cache_file(key).parent / f"{key}.pkl").write_bytes(pickle.dumps(Evil()))
+
+    assert load_cached_index(key) is None
+    assert not marker.exists()
+
+
+def test_a_json_cache_with_the_wrong_shape_is_a_miss(tmp_path: Path) -> None:
+    import json
+
+    key, file = _saved_index_file(tmp_path)
+    good = json.loads(file.read_text(encoding="utf-8"))
+    for broken in (
+        {**good, "index": {**good["index"], "chunks": [["only", "three", "fields"]]}},
+        {**good, "index": {**good["index"], "idf": {"term": "not a number"}}},
+        {**good, "index": {**good["index"], "chunk_vectors": []}},
+        {**good, "undecodable": [["file.md", "no_such_reason"]]},
+        {**good, "key": "someone-elses-key"},
+        {**good, "format_version": 1},
+        ["not", "an", "object"],
+    ):
+        file.write_text(json.dumps(broken), encoding="utf-8")
+        assert load_cached_index(key) is None, broken
+
+
+def test_rejected_documents_round_trip(tmp_path: Path) -> None:
+    from hydra_umc_docs_qa.ingest import RejectedDocument, RejectionReason
+
+    doc = tmp_path / "manual.md"
+    _write(doc, "# A\nSome content.\n")
+    key = compute_cache_key([doc])
+    rejected = [RejectedDocument(path=tmp_path / "x.bin", reason=RejectionReason.DISALLOWED_EXTENSION)]
+
+    save_cached_index(key, build_index(ingest_markdown_file(doc)), rejected)
+    cached = load_cached_index(key)
+
+    assert cached is not None and cached[1] == rejected

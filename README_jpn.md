@@ -4,7 +4,7 @@
 
 # 📚 HYDRA-UMC-DOCS-QA
 
-<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 简体中文</a> | 🇯🇵 <b>日本語</b></p>
+<p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | <a href="README_ita.md">🇮🇹 Italiano</a> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 简体中文</a> | 🇯🇵 <b>日本語</b> | <a href="README_por.md">🇵🇹 Português</a></p>
 
 ### 🤖 ハードウェア保守とドキュメント向け RAG ベース AI アシスタント
 
@@ -16,7 +16,7 @@
 
 ---
 
-**正直な現状確認 - 今日実際に動くもの:** Markdown インジェスト(`ingest.py`)、標準ライブラリのみによる TF-IDF/コサイン類似度インデックス(`index.py`)、JSON/HTTP の `serve` インターフェース(`api.py`)、そして `query`/`serve` CLI(`main.py`)はすべて本物であり、テスト済みである(`tests/test_ingest.py`、`tests/test_index.py`、`tests/test_api.py`、`tests/test_cli.py`、`tests/test_determinism.py` で合計 61 件のテストが成功)。これはローカルの Markdown のみを対象とした本物の字句(TF-IDF)検索であり、まだ LLM による合成ステップは存在しない。そのため一致した場合は実際に引用された passage をそのまま返し、一致しない場合は生成された回答ではなく正直に `No relevant passages found` を返す。まだ実装されておらず願望段階にとどまるもの: 以下の "Voice Integration"(VOICE-UI とのハンズフリー連携)と "Code Awareness"(ファームウェアモジュールや CAN プロトコルの詳細説明)の項目は、今日この時点でこのリポジトリに一切コードの裏付けがないロードマップ項目であり、`.md`/`.markdown` を超える PDF インジェストも同様に存在しない。これまでに何が実際に出荷されたかは `CHANGELOG.md` を参照。
+**正直な現状確認 - 今日実際に動くもの:** Markdown インジェスト(`ingest.py`)、標準ライブラリのみによる TF-IDF/コサイン類似度インデックス(`index.py`)、JSON/HTTP の `serve` インターフェース(`api.py`)、そして `query`/`serve` CLI(`main.py`)はすべて本物であり、テスト済みである(`tests/test_ingest.py`、`tests/test_index.py`、`tests/test_api.py`、`tests/test_cli.py`、`tests/test_determinism.py` で合計 65 件のテストが成功)。これはローカルの Markdown のみを対象とした本物の字句(TF-IDF)検索であり、まだ LLM による合成ステップは存在しない。そのため一致した場合は実際に引用された passage をそのまま返し、一致しない場合は生成された回答ではなく正直に `No relevant passages found` を返す。まだ実装されておらず願望段階にとどまるもの: 以下の "Voice Integration"(VOICE-UI とのハンズフリー連携)と "Code Awareness"(ファームウェアモジュールや CAN プロトコルの詳細説明)の項目は、今日この時点でこのリポジトリに一切コードの裏付けがないロードマップ項目であり、`.md`/`.markdown` を超える PDF インジェストも同様に存在しない。これまでに何が実際に出荷されたかは `CHANGELOG.md` を参照。
 
 ---
 
@@ -35,6 +35,7 @@
 * 🔒 **実在するドキュメントのアローリスト：** 実際に存在する `.md`/`.markdown` ファイルのみが取り込まれ、引用されます——それ以外の `--docs` パス（存在しない、または許可されていないファイルタイプ）はすべて、明確で個別の理由とともに出力されて拒否され、黙って読み飛ばされたり、実際のドキュメントであるかのように黙って読み込まれたりすることはありません。*（実装済み）*
 * 🔗 **追跡可能な引用：** すべての結果は `source#index` を引用します——取り込まれた正確な一節への安定した、曖昧さのないポインタであり、同じソースを再解析することで決定的に復元できます。*（実装済み）*
 * 🎯 **決定的なスコアリング：** ランキングはコーパスとクエリテキストのみに基づく純粋な関数であり、インタプリタのプロセスごとのハッシュシードには依存しません。*（実装済み）*
+* 🗄️ **コードを実行できないインデックスキャッシュ：** CLI の `query` は、構築したインデックスをユーザーのキャッシュディレクトリ（`HYDRA_UMC_DOCS_QA_CACHE_DIR`、なければ `XDG_CACHE_HOME`、なければ `~/.cache/hydra-umc-docs-qa`）に、各ドキュメントのパス・サイズ・更新時刻をキーとして保存します。現在は検証済みの JSON ファイルです。以前は `pickle` で、ファイルが持つ任意のコードを実行してしまうため、同じユーザーの他のプロセスがそこにファイルを置き、次の `query` に実行させることができました。置かれた、途切れた、または形の違うファイルは、単なるキャッシュミスになります。*（実装済み）*
 * 🌐 **実際の JSON/HTTP API：** `serve` サブコマンドは、同じ TF-IDF 検索を長時間稼働するローカルサービス（デフォルト `127.0.0.1:8110`）として実行し、`GET /query?q=...&top_k=N` と `GET /stats` を提供します——コーパスは起動時に一度だけ取り込まれてインデックス化され、リクエストごとには行われません。実際にキャプチャされた例は [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) を参照してください。*（実装済み）*
 * 🤖 **根拠に基づく推論：** 回答は提供されたプロジェクトドキュメントに厳密に基づきます。
 * 🎙️ **音声統合：** VOICE-UI と統合され、ハンズフリーの保守サポートを実現。
@@ -84,6 +85,7 @@ HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
 │   ├── ingest.py            # 実際の Markdown 取り込み -> 見出し単位の DocChunk
 │   ├── index.py              # 実際の TF-IDF インデックス（標準ライブラリのみ）+ コサイン類似度検索
+│   ├── cache.py              # 構築したインデックスのディスクキャッシュ（検証済み JSON、pickle は使わない）、繰り返しの `query` 用
 │   ├── api.py                  # シンプルなJSON/HTTPサーフェス(stdlibのhttp.server)。実際の`query`ロジックを橋渡し
 │   └── main.py                # エントリポイント + 実際の `query`/`serve` サブコマンド
 ├── tests/                   # 実際のテスト：取り込み、アローリスト、ランキング、決定性、api、エンドツーエンド CLI
@@ -131,7 +133,7 @@ run.bat
 実行します（`pytest tests/`）。引数なしの `run.sh` の予期される出力：
 
 ```text
-HYDRA-UMC-DOCS-QA v0.1.0
+HYDRA-UMC-DOCS-QA v0.1.1
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 

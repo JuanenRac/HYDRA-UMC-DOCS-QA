@@ -5,6 +5,11 @@ version number follows this ecosystem's "odometer" scheme: PATCH +1 on
 every real build, rolling into MINOR past 9 (`0.0.9` -> `0.1.0`); MAJOR is
 bumped manually only. See `bump_version.py`.
 
+## [0.1.1] - The index cache is data, not code
+
+- **No more `pickle`:** the CLI `query` index cache was a pickle in `~/.cache/hydra-umc-docs-qa`, and loading a pickle runs whatever code the file carries, so any other process of the same user could plant a `.pkl` there and have the next `query` execute it. The cache is now a JSON file (`<key>.json`, format version 2) that is validated field by field before it is used: chunk shape, finite numeric weights, matching vector count, known rejection reasons, matching key. A planted, truncated, wrongly shaped or old-format file is a plain cache miss and the index is rebuilt.
+- Old `.pkl` files are never read. 4 new tests (65 in all): the file is plain JSON, a planted pickle is never executed (including one disguised under the `.json` name), seven kinds of malformed JSON are misses, and rejected documents round-trip. The README now documents the cache (`cache.py`).
+
 ## [0.1.0] - Disk-persisted index cache for `query`, real matched-term highlighting
 
 - **Disk-persisted TF-IDF index cache:** the CLI's `query` subcommand
