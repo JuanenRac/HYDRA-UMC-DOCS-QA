@@ -2,7 +2,7 @@
   "schema_version": "1.0",
   "ecosystem": "HYDRA-UMC",
   "name": "HYDRA-UMC-DOCS-QA",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "role": "api",
   "stack": "python",
   "technologies": [
@@ -10,7 +10,7 @@
     "TF-IDF lexical retrieval"
   ],
   "deployment_target": "cm5",
-  "maturity": "established",
+  "maturity": "functional",
   "family": "Cognitive AI Node",
   "parent": "HYDRA-UMC-COGNITIVE-NODE",
   "build": "python tools/build_test.py",

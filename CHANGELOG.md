@@ -5,6 +5,11 @@ version number follows this ecosystem's "odometer" scheme: PATCH +1 on
 every real build, rolling into MINOR past 9 (`0.0.9` -> `0.1.0`); MAJOR is
 bumped manually only. See `bump_version.py`.
 
+## [0.1.4]
+
+- Maturity is functional: nothing here has been verified on real hardware yet.
+- The READMEs say, in the eight languages, what is planned and what has only been tested against fakes, emulators or fixtures, and carry a short safety and security status note.
+
 ## [0.1.3]
 
 - Build version synchronized with `hydra-umc.project.json` and the repository-native version source.
