@@ -5,6 +5,11 @@ version number follows this ecosystem's "odometer" scheme: PATCH +1 on
 every real build, rolling into MINOR past 9 (`0.0.9` -> `0.1.0`); MAJOR is
 bumped manually only. See `bump_version.py`.
 
+## [0.1.3]
+
+- Build version synchronized with `hydra-umc.project.json` and the repository-native version source.
+- The licence is written as GPL-3.0-or-later in every header and in the package metadata.
+
 ## [0.1.2] - A link can no longer leak a file, and scores tell how much of a question is covered
 
 - **Corpus safety:** a symbolic link named `notes.md` pointing at a secret was ingested and returned whole by `/query`. Links are now never followed (neither files nor directories), a directory scan is bounded in depth and in number of files, and control characters (terminal escape sequences) are removed from ingested text so a document cannot drive the terminal that prints it.

@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-DOCS-QA - tests/test_api.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 # =============================================================================
 """Real end-to-end HTTP tests: a real DocsQaServer (ThreadingHTTPServer)
 hit with real urllib requests - same convention as this family's other

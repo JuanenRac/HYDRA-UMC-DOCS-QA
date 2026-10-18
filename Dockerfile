@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-DOCS-QA - Container Build: Dockerfile
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 # =============================================================================
 # Real, minimal image for the TF-IDF retrieval HTTP API (api.py's own
 # DocsQaServer, stdlib http.server - the base package has zero runtime

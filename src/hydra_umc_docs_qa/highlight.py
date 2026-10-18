@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-DOCS-QA - src/hydra_umc_docs_qa/highlight.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 # =============================================================================
 """Real console highlighting of matched search terms in `query` output.
 

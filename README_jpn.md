@@ -9,7 +9,7 @@
 ### 🤖 ハードウェア保守とドキュメント向け RAG ベース AI アシスタント
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Licencia-GPL%203.0-blue.svg" alt="GPL 3.0">
+  <img src="https://img.shields.io/badge/Licencia-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Method-RAG%20%2F%20Vector%20Search-orange.svg" alt="RAG">
   <img src="https://img.shields.io/badge/Platform-Hailo--10-green.svg" alt="Hailo-10">
 </p>
@@ -133,7 +133,7 @@ run.bat
 実行します（`pytest tests/`）。引数なしの `run.sh` の予期される出力：
 
 ```text
-HYDRA-UMC-DOCS-QA v0.1.2
+HYDRA-UMC-DOCS-QA v0.1.3
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 
@@ -289,4 +289,4 @@ Top 1 passage(s) for: "firmware flashing"
 📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
 
 ## 📜 ライセンス
-GPL-3.0 —— 詳細は LICENSE を参照してください。
+GPL-3.0-or-later —— 詳細は LICENSE を参照してください。

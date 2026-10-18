@@ -9,7 +9,7 @@
 ### 🤖 基于 RAG 的硬件维护与文档 AI 助手
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Licencia-GPL%203.0-blue.svg" alt="GPL 3.0">
+  <img src="https://img.shields.io/badge/Licencia-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Method-RAG%20%2F%20Vector%20Search-orange.svg" alt="RAG">
   <img src="https://img.shields.io/badge/Platform-Hailo--10-green.svg" alt="Hailo-10">
 </p>
@@ -130,7 +130,7 @@ run.bat
 `run.sh` 的预期输出：
 
 ```text
-HYDRA-UMC-DOCS-QA v0.1.2
+HYDRA-UMC-DOCS-QA v0.1.3
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 
@@ -283,4 +283,4 @@ Top 1 passage(s) for: "firmware flashing"
 📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
 
 ## 📜 许可证
-GPL-3.0 —— 详见 LICENSE。
+GPL-3.0-or-later —— 详见 LICENSE。

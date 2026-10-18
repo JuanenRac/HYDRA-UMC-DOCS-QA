@@ -9,7 +9,7 @@
 ### 🤖 Asistente de IA Basado en RAG para Mantenimiento de Hardware y Documentación
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Licencia-GPL%203.0-blue.svg" alt="GPL 3.0">
+  <img src="https://img.shields.io/badge/Licencia-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Método-RAG%20%2F%20Búsqueda%20Vectorial-orange.svg" alt="RAG">
   <img src="https://img.shields.io/badge/Plataforma-Hailo--10-green.svg" alt="Hailo-10">
 </p>
@@ -185,7 +185,7 @@ run.bat
 real (`pytest tests/`). Salida esperada de un `run.sh` sin argumentos:
 
 ```text
-HYDRA-UMC-DOCS-QA v0.1.2
+HYDRA-UMC-DOCS-QA v0.1.3
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 
@@ -355,4 +355,4 @@ Este proyecto es parte del ecosistema de robótica HYDRA-UMC del mismo autor (Ju
 📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
 
 ## 📜 LICENCIA
-GPL-3.0 - Ver archivo LICENSE para más detalles.
+GPL-3.0-or-later - Ver archivo LICENSE para más detalles.

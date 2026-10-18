@@ -1,7 +1,7 @@
 # =============================================================================
 # HYDRA-UMC-DOCS-QA - src/hydra_umc_docs_qa/cache.py
 # Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
-# GPL-3.0 - see LICENSE
+# GPL-3.0-or-later - see LICENSE
 # =============================================================================
 """Disk-persisted TF-IDF index cache for the CLI `query` command.
 

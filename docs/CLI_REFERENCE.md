@@ -29,7 +29,7 @@ Bare invocation (no subcommand) prints identity/version/role and exits `0`:
 
 ```
 $ hydra-umc-docs-qa
-HYDRA-UMC-DOCS-QA v0.1.2
+HYDRA-UMC-DOCS-QA v0.1.3
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 
