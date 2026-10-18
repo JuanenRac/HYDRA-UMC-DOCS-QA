@@ -29,8 +29,10 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import tempfile
 from pathlib import Path
 
+from . import __version__
 from .index import TfidfIndex
 from .ingest import DocChunk, RejectedDocument, RejectionReason
 
@@ -58,6 +60,8 @@ def compute_cache_key(paths: list[Path]) -> str:
     first so the key does not depend on the real filesystem-dependent
     order `--docs`/directory expansion happened to produce."""
     digest = hashlib.sha256()
+    # an index built by another version of the tokenizer or of the scoring is not reusable
+    digest.update(f"docs-qa:{__version__}:{_CACHE_FORMAT_VERSION}:".encode("utf-8"))
     for path in sorted(paths, key=lambda p: str(p.resolve())):
         try:
             stat = path.stat()
@@ -165,9 +169,29 @@ def save_cached_index(key: str, index: TfidfIndex, undecodable: list[RejectedDoc
             "index": _index_to_json(index),
             "undecodable": [[str(doc.path), doc.reason.value] for doc in undecodable],
         }
-        tmp_path = directory / f".{key}.json.tmp"
-        with tmp_path.open("w", encoding="utf-8") as f:
-            json.dump(payload, f)
-        tmp_path.replace(_cache_file(key))
+        # a unique temporary name: two queries over the same corpus at once must not
+        # write the same file
+        file_descriptor, tmp_name = tempfile.mkstemp(dir=directory, prefix=f".{key}.", suffix=".tmp")
+        try:
+            with os.fdopen(file_descriptor, "w", encoding="utf-8") as f:
+                json.dump(payload, f)
+            os.replace(tmp_name, _cache_file(key))
+        finally:
+            if os.path.exists(tmp_name):
+                os.remove(tmp_name)
+        _prune_cache(directory)
+    except OSError:
+        pass
+
+
+MAX_CACHE_ENTRIES = 20
+
+
+def _prune_cache(directory: Path) -> None:
+    """Keeps the newest cache files only; every distinct set of documents makes a file."""
+    try:
+        entries = sorted(directory.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+        for stale in entries[MAX_CACHE_ENTRIES:]:
+            stale.unlink()
     except OSError:
         pass

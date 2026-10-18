@@ -16,7 +16,7 @@
 
 ---
 
-**Comprobación de honestidad - qué funciona realmente hoy:** la ingesta de Markdown (`ingest.py`), el índice TF-IDF/similitud-coseno solo con la stdlib (`index.py`), la superficie JSON/HTTP `serve` (`api.py`) y la CLI `query`/`serve` (`main.py`) son todos reales y están testeados (65 tests pasando en `tests/test_ingest.py`, `tests/test_index.py`, `tests/test_api.py`, `tests/test_cli.py`, `tests/test_determinism.py`). Esto es recuperación léxica real (TF-IDF) solo sobre Markdown local - todavía no hay ningún paso de síntesis por LLM, así que una coincidencia devuelve el pasaje citado literal, y una no-coincidencia devuelve un honesto `No relevant passages found` en vez de una respuesta generada. Lo que es aspiracional, no implementado: los puntos "Voice Integration" (relé manos libres con VOICE-UI) y "Code Awareness" (explicar módulos de firmware/detalles del protocolo CAN) más abajo son elementos de roadmap sin ningún código detrás en este repositorio hoy, y la ingesta de PDF más allá de `.md`/`.markdown` tampoco existe. Ver `CHANGELOG.md` para lo que se ha entregado exactamente hasta ahora.
+**Comprobación de honestidad - qué funciona realmente hoy:** la ingesta de Markdown (`ingest.py`), el índice TF-IDF/similitud-coseno solo con la stdlib (`index.py`), la superficie JSON/HTTP `serve` (`api.py`) y la CLI `query`/`serve` (`main.py`) son todos reales y están testeados (74 tests pasando en `tests/test_ingest.py`, `tests/test_index.py`, `tests/test_api.py`, `tests/test_cli.py`, `tests/test_determinism.py`). Esto es recuperación léxica real (TF-IDF) solo sobre Markdown local - todavía no hay ningún paso de síntesis por LLM, así que una coincidencia devuelve el pasaje citado literal, y una no-coincidencia devuelve un honesto `No relevant passages found` en vez de una respuesta generada. Lo que es aspiracional, no implementado: los puntos "Voice Integration" (relé manos libres con VOICE-UI) y "Code Awareness" (explicar módulos de firmware/detalles del protocolo CAN) más abajo son elementos de roadmap sin ningún código detrás en este repositorio hoy, y la ingesta de PDF más allá de `.md`/`.markdown` tampoco existe. Ver `CHANGELOG.md` para lo que se ha entregado exactamente hasta ahora.
 
 ---
 
@@ -185,7 +185,7 @@ run.bat
 real (`pytest tests/`). Salida esperada de un `run.sh` sin argumentos:
 
 ```text
-HYDRA-UMC-DOCS-QA v0.1.1
+HYDRA-UMC-DOCS-QA v0.1.2
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 
@@ -195,7 +195,7 @@ pasado con `--docs`:
 
 ```bash
 ./run.sh query "cableado del bus CAN" --top-k 3
-./run.sh query "busqueda vectorial recuperacion" --docs docs/manual.md --docs docs/spec.md
+./run.sh query "busqueda vectorial recuperacion" --docs docs/manual.md docs/spec.md
 
 # Windows
 run.bat query "cableado del bus CAN" --top-k 3

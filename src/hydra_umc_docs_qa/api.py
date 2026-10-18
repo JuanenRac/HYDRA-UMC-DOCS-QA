@@ -14,6 +14,7 @@ ever calls the already-fast `search()` against that cached index.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import asdict
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -61,8 +62,16 @@ def _query_params(handler: BaseHTTPRequestHandler) -> dict[str, str]:
     return {key: value[0] for key, value in values.items() if value}
 
 
+MAX_TOP_K = 50
+
+
 class Handler(BaseHTTPRequestHandler):
     server: "DocsQaServer"
+
+    # Seconds a client may stay silent on its connection before the server
+    # drops it, so a client that connects and sends nothing cannot hold a
+    # handler thread forever. Socket I/O only.
+    timeout = 15.0
 
     def log_message(self, format: str, *args: object) -> None:  # noqa: A002
         pass  # quiet by default, same reasoning as this family's other api.py files
@@ -74,7 +83,8 @@ class Handler(BaseHTTPRequestHandler):
         elif path == "/stats":
             _write_json(self, 200, {
                 "ingestedSources": self.server.ingested_sources,
-                "rejectedDocuments": self.server.rejected_descriptions,
+                # file names only: the absolute paths of the server's disk stay on the server
+                "rejectedDocuments": [re.sub(r"^.*[\\/]", "", d) for d in self.server.rejected_descriptions],
                 "indexed": self.server.index is not None,
             })
         else:
@@ -92,6 +102,9 @@ class Handler(BaseHTTPRequestHandler):
             top_k = int(params.get("top_k", "5"))
         except ValueError:
             _write_error(self, 400, "top_k must be an integer")
+            return
+        if top_k > MAX_TOP_K:
+            _write_error(self, 400, f"top_k must be at most {MAX_TOP_K}")
             return
         try:
             results = search(self.server.index, params["q"], top_k=top_k)

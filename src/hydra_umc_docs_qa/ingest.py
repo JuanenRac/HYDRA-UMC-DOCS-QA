@@ -11,6 +11,7 @@ CHANGELOG in this ecosystem is already written in.
 """
 from __future__ import annotations
 
+import os
 import re
 from dataclasses import dataclass
 from enum import Enum
@@ -45,6 +46,14 @@ class DocChunk:
 
 
 _FENCE_RE = re.compile(r"^(`{3,}|~{3,})")
+# CommonMark: an ATX heading is one to six "#" followed by a space (or nothing),
+# indented at most three spaces - "#include <stdio.h>" and "#hashtag" are text.
+_HEADING_RE = re.compile(r"^ {0,3}#{1,6}(?:[ \t]|$)")
+# control characters (C0/C1 except tab and newline) that could drive a terminal
+_CONTROL_CHARS_RE = re.compile("[\x00-\x08\x0b-\x1f\x7f-\x9f]")
+# upper bounds on one directory expansion, so a hostile tree cannot make a scan unbounded
+MAX_EXPANDED_FILES = 5000
+MAX_WALK_DEPTH = 12
 
 
 def ingest_markdown_text(text: str, *, source: str) -> list[DocChunk]:
@@ -76,13 +85,19 @@ def ingest_markdown_text(text: str, *, source: str) -> list[DocChunk]:
         fence_match = _FENCE_RE.match(stripped)
         if fence is not None:
             body_lines.append(line)
-            if fence_match and fence_match.group(1)[0] == fence[0] and len(fence_match.group(1)) >= len(fence):
+            # a closing fence carries no info string (CommonMark)
+            if (
+                fence_match
+                and fence_match.group(1)[0] == fence[0]
+                and len(fence_match.group(1)) >= len(fence)
+                and stripped == fence_match.group(1)
+            ):
                 fence = None
             continue
         if fence_match:
             fence = fence_match.group(1)
             body_lines.append(line)
-        elif stripped.startswith("#"):
+        elif _HEADING_RE.match(line):
             flush()
             heading = stripped.lstrip("#").strip()
             body_lines = []
@@ -113,7 +128,7 @@ def canonical_source(path: Path) -> str:
 
 def ingest_markdown_file(path: Path) -> list[DocChunk]:
     """Ingest one real Markdown file from disk."""
-    text = path.read_text(encoding="utf-8")
+    text = _CONTROL_CHARS_RE.sub("", path.read_text(encoding="utf-8"))
     return ingest_markdown_text(text, source=canonical_source(path))
 
 
@@ -140,6 +155,7 @@ class RejectionReason(str, Enum):
     DISALLOWED_EXTENSION = "disallowed_extension"
     TOO_LARGE = "too_large"
     UNDECODABLE = "undecodable"
+    SYMLINK = "symlink"
 
 
 @dataclass(frozen=True)
@@ -152,6 +168,8 @@ class RejectedDocument:
             return f"{self.path}: file not found (no source)"
         if self.reason is RejectionReason.TOO_LARGE:
             return f"{self.path}: exceeds the {MAX_DOCUMENT_BYTES}-byte ingestion limit"
+        if self.reason is RejectionReason.SYMLINK:
+            return f"{self.path}: is a symbolic link - not followed, so a link cannot expose a file outside the documents"
         if self.reason is RejectionReason.UNDECODABLE:
             return f"{self.path}: not valid UTF-8 - skipped, not ingested as garbled text"
         suffix = self.path.suffix or "(none)"
@@ -162,6 +180,8 @@ def validate_doc_path(path: Path) -> RejectedDocument | None:
     """Real allowlist gate: `None` if `path` is a real, permitted document,
     else the real reason it was rejected. Checked in this order because a
     missing file's extension is meaningless to report."""
+    if path.is_symlink():
+        return RejectedDocument(path=path, reason=RejectionReason.SYMLINK)
     if not path.is_file():
         return RejectedDocument(path=path, reason=RejectionReason.MISSING)
     if path.suffix.lower() not in ALLOWED_SUFFIXES:
@@ -186,13 +206,32 @@ def expand_doc_paths(paths: Iterable[Path]) -> list[Path]:
     """
     expanded: list[Path] = []
     for path in paths:
-        if path.is_dir():
-            expanded.extend(
-                sorted(p for p in path.rglob("*") if p.is_file() and p.suffix.lower() in ALLOWED_SUFFIXES)
-            )
+        if path.is_dir() and not path.is_symlink():
+            expanded.extend(_walk_markdown_files(path))
         else:
             expanded.append(path)
     return expanded
+
+
+def _walk_markdown_files(root: Path) -> list[Path]:
+    """Markdown files below `root`, sorted, never following a symbolic link
+    (neither a linked directory nor a linked file) and bounded in depth and in
+    number, so a tree from a third party cannot leak files from elsewhere or
+    make one scan endless."""
+    found: list[Path] = []
+    root_depth = len(root.parts)
+    for current, dirnames, filenames in os.walk(root, followlinks=False):
+        current_path = Path(current)
+        if len(current_path.parts) - root_depth >= MAX_WALK_DEPTH:
+            dirnames[:] = []
+        dirnames[:] = sorted(d for d in dirnames if not (current_path / d).is_symlink())
+        for name in sorted(filenames):
+            candidate = current_path / name
+            if candidate.suffix.lower() in ALLOWED_SUFFIXES and not candidate.is_symlink():
+                found.append(candidate)
+                if len(found) >= MAX_EXPANDED_FILES:
+                    return sorted(found)
+    return sorted(found)
 
 
 def partition_allowed_paths(paths: Iterable[Path]) -> tuple[list[Path], list[RejectedDocument]]:

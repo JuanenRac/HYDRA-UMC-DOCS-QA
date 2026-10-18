@@ -16,7 +16,7 @@
 
 ---
 
-**Verificação de honestidade - o que realmente funciona hoje:** a ingestão de Markdown (`ingest.py`), o índice TF-IDF/similaridade por cosseno só com a biblioteca padrão (`index.py`), a superfície JSON/HTTP `serve` (`api.py`) e a CLI `query`/`serve` (`main.py`) são todos reais e testados (65 testes a passar em `tests/test_ingest.py`, `tests/test_index.py`, `tests/test_api.py`, `tests/test_cli.py`, `tests/test_determinism.py`, `tests/test_cache.py`). Isto é recuperação lexical real (TF-IDF) apenas sobre Markdown local - ainda não há passo de síntese por LLM, pelo que uma correspondência devolve a própria passagem citada tal e qual, e uma não-correspondência devolve um honesto `No relevant passages found` em vez de uma resposta gerada. O que é aspiracional, não implementado: os pontos «Integração de voz» (relé mãos-livres do VOICE-UI) e «Consciência de código» (explicar módulos de firmware/especificidades do protocolo CAN) abaixo são itens do roteiro, sem qualquer código por trás neste repositório hoje, e a ingestão de PDF para lá de `.md`/`.markdown` também não existe. Consulte o `CHANGELOG.md` para saber exatamente o que já foi entregue.
+**Verificação de honestidade - o que realmente funciona hoje:** a ingestão de Markdown (`ingest.py`), o índice TF-IDF/similaridade por cosseno só com a biblioteca padrão (`index.py`), a superfície JSON/HTTP `serve` (`api.py`) e a CLI `query`/`serve` (`main.py`) são todos reais e testados (74 testes a passar em `tests/test_ingest.py`, `tests/test_index.py`, `tests/test_api.py`, `tests/test_cli.py`, `tests/test_determinism.py`, `tests/test_cache.py`). Isto é recuperação lexical real (TF-IDF) apenas sobre Markdown local - ainda não há passo de síntese por LLM, pelo que uma correspondência devolve a própria passagem citada tal e qual, e uma não-correspondência devolve um honesto `No relevant passages found` em vez de uma resposta gerada. O que é aspiracional, não implementado: os pontos «Integração de voz» (relé mãos-livres do VOICE-UI) e «Consciência de código» (explicar módulos de firmware/especificidades do protocolo CAN) abaixo são itens do roteiro, sem qualquer código por trás neste repositório hoje, e a ingestão de PDF para lá de `.md`/`.markdown` também não existe. Consulte o `CHANGELOG.md` para saber exatamente o que já foi entregue.
 
 ---
 
@@ -122,7 +122,7 @@ run.bat
 O `build.sh`/`build.bat` sobem a versão (estilo odómetro, ver `bump_version.py`) antes de cada compilação real e executam a suíte de testes real (`pytest tests/`). Saída esperada de um `run.sh` sem argumentos:
 
 ```text
-HYDRA-UMC-DOCS-QA v0.1.1
+HYDRA-UMC-DOCS-QA v0.1.2
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 
@@ -130,7 +130,7 @@ O subcomando real `query` pesquisa Markdown ingerido - por defeito o `README.md`
 
 ```bash
 ./run.sh query "CAN bus wiring" --top-k 3
-./run.sh query "vector search retrieval" --docs docs/manual.md --docs docs/spec.md
+./run.sh query "vector search retrieval" --docs docs/manual.md docs/spec.md
 
 # Windows
 run.bat query "CAN bus wiring" --top-k 3

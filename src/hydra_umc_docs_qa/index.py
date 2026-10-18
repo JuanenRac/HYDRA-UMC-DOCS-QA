@@ -109,7 +109,7 @@ def build_index(chunks: list[DocChunk]) -> TfidfIndex:
     return TfidfIndex(chunks=tuple(chunks), idf=idf, chunk_vectors=tuple(chunk_vectors))
 
 
-def _cosine_similarity(a: dict[str, float], b: dict[str, float]) -> float:
+def _cosine_similarity(a: dict[str, float], b: dict[str, float], extra_norm_squared: float = 0.0) -> float:
     if not a or not b:
         return 0.0
     # `a.keys() & b.keys()` is a set, and CPython's set iteration order
@@ -125,7 +125,7 @@ def _cosine_similarity(a: dict[str, float], b: dict[str, float]) -> float:
     shared = sorted(a.keys() & b.keys())
     dot = sum(a[term] * b[term] for term in shared)
     norm_a = math.sqrt(sum(weight * weight for weight in a.values()))
-    norm_b = math.sqrt(sum(weight * weight for weight in b.values()))
+    norm_b = math.sqrt(sum(weight * weight for weight in b.values()) + extra_norm_squared)
     if norm_a == 0.0 or norm_b == 0.0:
         return 0.0
     return dot / (norm_a * norm_b)
@@ -140,9 +140,10 @@ class SearchResult:
 def search(index: TfidfIndex, query: str, *, top_k: int = 5) -> list[SearchResult]:
     """Rank real chunks by cosine similarity to `query`, highest first.
 
-    Query terms outside the index's vocabulary contribute nothing (a real,
-    honest miss) rather than being silently dropped from an average that
-    would understate how little the corpus actually covers the question.
+    Query terms outside the index's vocabulary add nothing to the match but DO
+    count in the length of the query, weighted like the rarest possible term, so
+    a question the corpus covers only in part scores lower than one it covers
+    fully instead of looking just as confident.
     """
     if top_k < 0:
         # `results[:top_k]` below would otherwise hit Python's negative-slice
@@ -155,9 +156,14 @@ def search(index: TfidfIndex, query: str, *, top_k: int = 5) -> list[SearchResul
     query_vector = {
         term: weight * index.idf[term] for term, weight in query_tf.items() if term in index.idf
     }
+    # the largest idf a term of this corpus could have is that of a term seen in no chunk
+    unseen_idf = math.log(1 + len(index.chunks)) + 1.0
+    unknown_norm_squared = sum(
+        (weight * unseen_idf) ** 2 for term, weight in query_tf.items() if term not in index.idf
+    )
 
     results = [
-        SearchResult(chunk=chunk, score=_cosine_similarity(query_vector, vector))
+        SearchResult(chunk=chunk, score=_cosine_similarity(query_vector, vector, unknown_norm_squared))
         for chunk, vector in zip(index.chunks, index.chunk_vectors)
     ]
     results = [result for result in results if result.score > 0.0]

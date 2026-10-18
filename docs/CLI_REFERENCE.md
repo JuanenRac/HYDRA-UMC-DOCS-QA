@@ -29,7 +29,7 @@ Bare invocation (no subcommand) prints identity/version/role and exits `0`:
 
 ```
 $ hydra-umc-docs-qa
-HYDRA-UMC-DOCS-QA v0.0.7
+HYDRA-UMC-DOCS-QA v0.1.2
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 
@@ -148,7 +148,8 @@ $ curl -s "http://127.0.0.1:8110/query?q=firmware+flashing"
 ```
 
 `GET /stats` — which documents this server instance actually indexed at
-startup, and which were rejected:
+startup, and which were rejected (file names only, never absolute paths; a
+symbolic link is rejected, and `top_k` is capped at 50):
 
 ```
 $ curl -s http://127.0.0.1:8110/stats

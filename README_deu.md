@@ -16,7 +16,7 @@
 
 ---
 
-**Ehrlichkeitscheck - was heute wirklich läuft:** die Markdown-Ingestion (`ingest.py`), der reine Stdlib-TF-IDF/Kosinus-Ähnlichkeitsindex (`index.py`), die JSON/HTTP-`serve`-Oberfläche (`api.py`) und die `query`/`serve`-CLI (`main.py`) sind alle real und getestet (65 bestandene Tests in `tests/test_ingest.py`, `tests/test_index.py`, `tests/test_api.py`, `tests/test_cli.py`, `tests/test_determinism.py`). Dies ist echte lexikalische (TF-IDF) Suche ausschließlich über lokales Markdown - es gibt noch keinen LLM-Syntheseschritt, sodass ein Treffer die tatsächlich zitierte Passage wörtlich zurückgibt und ein Nicht-Treffer ein ehrliches `No relevant passages found` statt einer generierten Antwort liefert. Was rein aspirativ ist und nicht implementiert: die unten aufgeführten Punkte "Voice Integration" (freihändiges VOICE-UI-Relay) und "Code Awareness" (Erklärung von Firmware-Modulen/CAN-Protokolldetails) sind Roadmap-Punkte ohne jeglichen Code dahinter in diesem Repository heute, und auch eine PDF-Ingestion über `.md`/`.markdown` hinaus existiert nicht. Siehe `CHANGELOG.md` für das, was bisher genau ausgeliefert wurde.
+**Ehrlichkeitscheck - was heute wirklich läuft:** die Markdown-Ingestion (`ingest.py`), der reine Stdlib-TF-IDF/Kosinus-Ähnlichkeitsindex (`index.py`), die JSON/HTTP-`serve`-Oberfläche (`api.py`) und die `query`/`serve`-CLI (`main.py`) sind alle real und getestet (74 bestandene Tests in `tests/test_ingest.py`, `tests/test_index.py`, `tests/test_api.py`, `tests/test_cli.py`, `tests/test_determinism.py`). Dies ist echte lexikalische (TF-IDF) Suche ausschließlich über lokales Markdown - es gibt noch keinen LLM-Syntheseschritt, sodass ein Treffer die tatsächlich zitierte Passage wörtlich zurückgibt und ein Nicht-Treffer ein ehrliches `No relevant passages found` statt einer generierten Antwort liefert. Was rein aspirativ ist und nicht implementiert: die unten aufgeführten Punkte "Voice Integration" (freihändiges VOICE-UI-Relay) und "Code Awareness" (Erklärung von Firmware-Modulen/CAN-Protokolldetails) sind Roadmap-Punkte ohne jeglichen Code dahinter in diesem Repository heute, und auch eine PDF-Ingestion über `.md`/`.markdown` hinaus existiert nicht. Siehe `CHANGELOG.md` für das, was bisher genau ausgeliefert wurde.
 
 ---
 
@@ -192,7 +192,7 @@ run.bat
 aus (`pytest tests/`). Erwartete Ausgabe eines `run.sh` ohne Argumente:
 
 ```text
-HYDRA-UMC-DOCS-QA v0.1.1
+HYDRA-UMC-DOCS-QA v0.1.2
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 
@@ -202,7 +202,7 @@ beliebige echte Dateien, die über `--docs` übergeben werden:
 
 ```bash
 ./run.sh query "CAN-Bus-Verkabelung" --top-k 3
-./run.sh query "Vektorsuche Retrieval" --docs docs/manual.md --docs docs/spec.md
+./run.sh query "Vektorsuche Retrieval" --docs docs/manual.md docs/spec.md
 
 # Windows
 run.bat query "CAN-Bus-Verkabelung" --top-k 3

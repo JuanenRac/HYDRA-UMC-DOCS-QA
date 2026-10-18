@@ -53,5 +53,12 @@ def highlight_terms(text: str, query: str, *, stream: object = None) -> str:
     # Longest terms first so a shorter term that is a substring of a
     # longer one (e.g. CJK bigrams sharing a character) never carves up a
     # match the longer term should have highlighted whole.
-    pattern = re.compile("|".join(re.escape(term) for term in terms), re.IGNORECASE)
+    # A Latin term only counts as a whole word ("a" must not light up every "a"
+    # inside "banana"); CJK terms are bigrams and stay substrings.
+    def alternative(term: str) -> str:
+        if re.fullmatch(r"[A-Za-z0-9\u00c0-\u024f_]+", term):
+            return rf"(?<![A-Za-z0-9\u00c0-\u024f_]){re.escape(term)}(?![A-Za-z0-9\u00c0-\u024f_])"
+        return re.escape(term)
+
+    pattern = re.compile("|".join(alternative(term) for term in terms), re.IGNORECASE)
     return pattern.sub(lambda m: f"{_BOLD_YELLOW}{m.group(0)}{_RESET}", text)

@@ -5,6 +5,16 @@ version number follows this ecosystem's "odometer" scheme: PATCH +1 on
 every real build, rolling into MINOR past 9 (`0.0.9` -> `0.1.0`); MAJOR is
 bumped manually only. See `bump_version.py`.
 
+## [0.1.2] - A link can no longer leak a file, and scores tell how much of a question is covered
+
+- **Corpus safety:** a symbolic link named `notes.md` pointing at a secret was ingested and returned whole by `/query`. Links are now never followed (neither files nor directories), a directory scan is bounded in depth and in number of files, and control characters (terminal escape sequences) are removed from ingested text so a document cannot drive the terminal that prints it.
+- **Scoring:** words of the question that the corpus does not know now lower the score, as the documentation always said; a question covered in one word out of ten no longer looks as confident as a fully covered one.
+- **Markdown parsing:** only real headings (`#` followed by a space) split a section, so `#include <stdio.h>` and `#hashtag` stay text, and a code fence is closed only by a fence without an info string.
+- **Highlighting:** a short term marks whole words only (it used to light up every "a" inside "banana").
+- **Cache:** the key includes the package version, so an updated tokenizer never reuses an old index; old entries are pruned (20 kept) and each write uses a unique temporary file.
+- **HTTP service:** a silent client is dropped after 15 seconds, `top_k` is capped at 50, and `/stats` lists rejected documents by file name instead of absolute paths.
+- **Docs:** the CLI reference shows the current version, the README example passes both files to a single `--docs`, and the manifest lists the real technology (TF-IDF lexical retrieval) instead of RAG and vector search (74 tests).
+
 ## [0.1.1] - The index cache is data, not code
 
 - **No more `pickle`:** the CLI `query` index cache was a pickle in `~/.cache/hydra-umc-docs-qa`, and loading a pickle runs whatever code the file carries, so any other process of the same user could plant a `.pkl` there and have the next `query` execute it. The cache is now a JSON file (`<key>.json`, format version 2) that is validated field by field before it is used: chunk shape, finite numeric weights, matching vector count, known rejection reasons, matching key. A planted, truncated, wrongly shaped or old-format file is a plain cache miss and the index is rebuilt.
