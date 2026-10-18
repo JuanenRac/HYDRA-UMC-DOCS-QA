@@ -20,6 +20,17 @@
 
 ---
 
+## 📋 Num relance
+
+| | |
+|---|---|
+| Versão | `0.1.3` |
+| Maturidade | Estabelecido |
+| Testes | 74 |
+| Tecnologia | Python / TF-IDF lexical retrieval |
+| Destino | O Raspberry Pi CM5 de uma célula HYDRA-UMC |
+| Em hardware real | Ainda não: não há registo de execução em hardware real para esta versão |
+
 ## 1. 🛠️ VISÃO TÉCNICA GERAL
 
 O **HYDRA-UMC-DOCS-QA** é um assistente especializado de Geração Aumentada por Recuperação (RAG) pensado para técnicos no terreno e programadores. Dá respostas instantâneas e fundamentadas a perguntas técnicas sobre o ecossistema HYDRA-UMC.
