@@ -1,4 +1,4 @@
-# Changelog: HYDRA-UMC-DOCS-QA 📚
+# Changelog
 
 All notable changes to this project are documented here.
 
@@ -164,7 +164,6 @@ ingests the valid one and reports the invalid one by name.
 
 ## [0.0.6] - Rejected a negative --top-k instead of silently mis-slicing
 
-### Fixed
 - **`index.py`'s `search()`** - `results[:top_k]` had no guard against a
   negative `top_k`; Python's own negative-slice semantics (e.g. `top_k=-1`)
   silently returned all but the lowest-ranked result instead of erroring or
@@ -178,29 +177,24 @@ ingests the valid one and reports the invalid one by name.
   the query's honest citation boundary without unbounded local file reads.
 - Removed an exact project-count reference from the technical overview.
 
-### Added
 - Copyright/license header on every source file and build/run script.
 - `CHANGELOG.md` (this file).
 - Extended documentation across `README.md` and its 4 translations:
   advanced technical/architecture section, detailed build/run
   troubleshooting, and a full "Related Projects" section.
 
-### Changed
 - Inline comments explaining the *why* behind non-obvious decisions
   (versioning scheme, src-layout, why this child has no hardware/
   firmware/os/models of its own).
 
 ## [0.0.5] - Deterministic scoring, traceable citations, real document allowlist
-### Added
 - **A real document allowlist gate** (`ingest.py`'s `validate_doc_path`/`ingest_allowed_markdown_files`) - only `.md`/`.markdown` files that actually exist on disk are ever ingested and cited. Every other `--docs` path (missing, or a non-Markdown file - a stray `.env`, firmware binary, unrelated source file) is rejected with a distinct, printed reason (`file not found` vs `disallowed extension`) instead of being silently skipped or silently read as if it were legitimate documentation. `query` now prints one `REJECTED ...` line per bad path, still answers from whatever real documents remain, and reports the existing honest "No documents ingested" failure only when nothing valid is left.
 - **Traceable citations**: `DocChunk` now carries a real `index` - its 0-based ordinal position within its own source document - alongside `source`/`heading`. Citations print as `source#index` (e.g. `manual.md#1`), a stable key that disambiguates repeated headings within one file and lets a citation be deterministically recovered by re-parsing the same source (proven by a real round-trip test).
 - 21 new tests (`test_ingest.py`, `test_cli.py`, `test_determinism.py`) covering the full allowlist validation matrix, the citation round-trip, and cross-process output determinism - 26 tests total.
 
-### Fixed
 - `index.py`'s cosine similarity summed shared TF-IDF terms in `dict.keys() & dict.keys()` set order, which depends on CPython's per-process string hash randomization (`PYTHONHASHSEED`) rather than only on the corpus and query text - a real (if narrow) determinism hole for a retrieval system whose whole point is reproducible answers. Sorting the shared terms before summing removes the hash-seed dependency entirely.
 
 ## [0.0.4] - Real v0 lexical retrieval ("Local Vector Search")
-### Added
 - `ingest.py` - real Markdown ingestion: splits a document into
   heading-scoped `DocChunk`s (text before the first heading is kept
   under an empty heading so front-matter is never silently dropped).
@@ -223,7 +217,6 @@ ingests the valid one and reports the invalid one by name.
   unrelated one, an unrelated query returns no results), and a real
   end-to-end CLI round-trip against a real Markdown file on disk.
 
-### Fixed
 - **Real bug found via live end-to-end verification** (not a hypothetical
   review catch): printing a retrieved snippet containing an emoji (this
   ecosystem's own READMEs are full of them, e.g. `🔍 **Local Vector
@@ -235,7 +228,6 @@ ingests the valid one and reports the invalid one by name.
   fix, with a regression test.
 
 ## [0.0.2]
-### Added
 - Initial Python scaffolding: `pyproject.toml` (setuptools, src-layout),
   `src/hydra_umc_docs_qa/__init__.py` + `main.py` (real entry point -
   prints identity/version/role, exits 0).
