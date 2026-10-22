@@ -7,6 +7,7 @@ bumped manually only. See `bump_version.py`.
 
 ## [Unreleased]
 
+- **The READMEs no longer say the assistant has "read" the whole ecosystem.** In the eight languages they now state what it does: it answers only from the Markdown documents given with `--docs` and cites the passage it used; reading all the manuals, schematics and source code is the goal and is planned.
 - Added `tools/hydra_project_tool.py`: the same `validate`, `test`, `version`, `status` and `bump` commands in every repository. The checks run with `HYDRA_UMC_CI=1` and fail if the version changes; only `bump` changes it.
 
 ## [0.1.4]

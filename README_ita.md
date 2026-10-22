@@ -37,7 +37,7 @@
 
 **HYDRA-UMC-DOCS-QA** è un assistente specializzato Retrieval-Augmented Generation (RAG) progettato per tecnici e sviluppatori in loco. Fornisce risposte istantanee e documentate a domande tecniche sull'ecosistema HYDRA-UMC.
 
-Ha "letto" tutti i manuali, la documentazione degli schemi e il codice sorgente dell'intero ecosistema, permettendogli di assistere nella risoluzione dei problemi, nelle query di pinout e nella compilazione del firmware senza necessità di una connessione internet.
+Risponde solo dai documenti Markdown che gli vengono dati con `--docs`, in locale e senza connessione internet, e cita sempre il passaggio usato. Leggere tutti i manuali, la documentazione degli schemi e il codice sorgente dell'intero ecosistema per la risoluzione dei problemi, il pinout e la compilazione del firmware è l'obiettivo, previsto ma non ancora raggiunto.
 
 ### Caratteristiche principali:
 * 🔍 **Ricerca vettoriale locale (v0):** Vero recupero lessicale TF-IDF, solo stdlib, su documenti Markdown locali. *(implementato come vera ricerca lessicale - non ancora ricerca semantica basata su embedding, e l'ingestione PDF resta lavoro futuro; vedi BUILD ED ESECUZIONE sotto)*
