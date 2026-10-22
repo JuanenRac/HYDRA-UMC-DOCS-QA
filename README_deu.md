@@ -54,9 +54,7 @@ Er antwortet nur aus den Markdown-Dokumenten, die ihm mit `--docs` übergeben we
   (neben VLA-Engine, Voice-UI und Semantic-Planner), teilt sich das
   HydraOS-Image und die Modellgewichte des eigenen Elternprojekts,
   anstatt eigene Kopien zu pflegen.
-* 📦 **Kilometerzähler-Versionierung:** Jeder echte Build erhöht
-  automatisch die Version von `pyproject.toml` (`bump_version.py`) -
-  keine manuellen Versionsänderungen.
+* 📦 **Kilometerzähler-Versionierung:** Die Version in `pyproject.toml` wird nur vom expliziten `bump`-Befehl erhöht (`python tools/hydra_project_tool.py bump`, der `bump_version.py` ausführt) - Bauen ändert sie nie.
 
 ---
 
@@ -170,7 +168,7 @@ HYDRA-UMC-DOCS-QA/
 │   └── ci_validate.py       # Manifest/CHANGELOG/Docs-Validierung, von CI genutzt
 ├── build/                   # Lokale Build-Ausgabe (von git ignoriert)
 ├── pyproject.toml           # Paket-Metadaten (Version per Kilometerzähler-Inkrement)
-├── bump_version.py          # Native Versionserhöhung im Kilometerzähler-Stil (von build.sh/.bat verwendet)
+├── bump_version.py          # Versionserhöhung im Kilometerzähler-Stil (nur vom expliziten `bump`-Befehl ausgeführt)
 ├── bump_manifest_version.py # Synchronisiert die Version von hydra-umc.project.json mit der nativen (--sync)
 ├── build.sh / build.bat     # Erstellt das venv, installiert (mit Dev-Extras), prüft den Import, führt Tests aus
 └── run.sh / run.bat         # Führt den Einstiegspunkt aus (leitet Argumente weiter, z. B. `query`)
@@ -200,8 +198,7 @@ build.bat
 run.bat
 ```
 
-`build.sh`/`build.bat` erhöhen die Version (Kilometerzähler-Stil, siehe
-`bump_version.py`) vor jedem echten Build und führen die echte Testsuite
+`build.sh`/`build.bat` ändern die Version nie (nur `python tools/hydra_project_tool.py bump` erhöht sie) und führen die echte Testsuite
 aus (`pytest tests/`). Erwartete Ausgabe eines `run.sh` ohne Argumente:
 
 ```text

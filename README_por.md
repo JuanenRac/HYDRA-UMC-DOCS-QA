@@ -53,8 +53,7 @@ Só responde com base nos documentos Markdown que lhe são dados com `--docs`, l
   sob o [HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE)
   (ao lado do VLA-Engine, Voice-UI e Semantic-Planner), partilhando a imagem
   HydraOS e os pesos de modelo do pai em vez de manter cópias próprias.
-* 📦 **Versionamento em odómetro:** cada compilação real sobe automaticamente a
-  versão do `pyproject.toml` (`bump_version.py`) - sem edições manuais de versão.
+* 📦 **Versionamento em odómetro:** A versão do `pyproject.toml` só é subida pelo comando `bump` explícito (`python tools/hydra_project_tool.py bump`, que executa o `bump_version.py`) - compilar nunca a altera.
 
 ---
 
@@ -107,8 +106,8 @@ HYDRA-UMC-DOCS-QA/
 │   ├── build_test.py        # Verificação de compilação sem alterar versões
 │   └── ci_validate.py       # Validação de manifesto/CHANGELOG/docs usada pelo CI
 ├── build/                   # Saída de compilação local (ignorada pelo git)
-├── pyproject.toml           # Metadados do pacote (versão em odómetro a cada compilação real)
-├── bump_version.py          # Subida de versão nativa estilo odómetro (usada por build.sh/.bat)
+├── pyproject.toml           # Metadados do pacote (versão subida só pelo comando bump explícito)
+├── bump_version.py          # Subida de versão ao estilo conta-quilómetros (executada só pelo comando `bump` explícito)
 ├── bump_manifest_version.py # Sincroniza a versão do hydra-umc.project.json com a nativa (--sync)
 ├── build.sh / build.bat     # Cria o venv, instala (com extras de desenvolvimento), verifica a importação, executa os testes
 └── run.sh / run.bat         # Executa o ponto de entrada (reencaminha argumentos, p. ex. `query`)
@@ -132,7 +131,7 @@ build.bat
 run.bat
 ```
 
-O `build.sh`/`build.bat` sobem a versão (estilo odómetro, ver `bump_version.py`) antes de cada compilação real e executam a suíte de testes real (`pytest tests/`). Saída esperada de um `run.sh` sem argumentos:
+`build.sh`/`build.bat` nunca alteram a versão (só `python tools/hydra_project_tool.py bump` a sobe) e executam a suíte de testes real (`pytest tests/`). Saída esperada de um `run.sh` sem argumentos:
 
 ```text
 HYDRA-UMC-DOCS-QA v0.1.4

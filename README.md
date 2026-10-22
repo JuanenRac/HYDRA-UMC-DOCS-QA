@@ -54,8 +54,7 @@ It answers only from the Markdown documents it is given with `--docs`, locally a
   (alongside VLA-Engine, Voice-UI and Semantic-Planner), sharing its
   parent's HydraOS image and model weights instead of keeping its own
   copies.
-* 📦 **Odometer Versioning:** Every real build bumps `pyproject.toml`'s
-  own version automatically (`bump_version.py`) - no manual version edits.
+* 📦 **Odometer Versioning:** The version in `pyproject.toml` is raised only by the explicit bump command (`python tools/hydra_project_tool.py bump`, which runs `bump_version.py`) - building never changes it.
 
 ---
 
@@ -158,8 +157,8 @@ HYDRA-UMC-DOCS-QA/
 │   ├── build_test.py        # Non-versioning build/compile check
 │   └── ci_validate.py       # Manifest/CHANGELOG/docs validation used by CI
 ├── build/                   # Local build output (git-ignored)
-├── pyproject.toml           # Package metadata (version odometer-bumped on every real build)
-├── bump_version.py          # Odometer-style native version bump (used by build.sh/.bat)
+├── pyproject.toml           # Package metadata (version raised only by the explicit bump command)
+├── bump_version.py          # Odometer-style version bump (run only by the explicit `bump` command)
 ├── bump_manifest_version.py # Syncs hydra-umc.project.json's version to the native one (--sync)
 ├── build.sh / build.bat     # Create venv, install (with dev extras), verify import, run tests
 └── run.sh / run.bat         # Run the entry point (forwards args, e.g. `query`)
@@ -188,8 +187,7 @@ build.bat
 run.bat
 ```
 
-`build.sh`/`build.bat` bump the version (odometer-style, see
-`bump_version.py`) before every real build, and run the real test suite
+`build.sh`/`build.bat` never change the version (only `python tools/hydra_project_tool.py bump` raises it), and run the real test suite
 (`pytest tests/`). Expected output of a bare `run.sh`:
 
 ```text
