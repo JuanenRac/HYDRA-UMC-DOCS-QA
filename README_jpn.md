@@ -26,7 +26,7 @@
 
 | | |
 |---|---|
-| バージョン | `0.1.4` |
+| バージョン | `0.1.5` |
 | 成熟度 | 機能する |
 | テスト | 74 |
 | 技術 | Python / TF-IDF lexical retrieval |
@@ -146,7 +146,7 @@ run.bat
 実行します（`pytest tests/`）。引数なしの `run.sh` の予期される出力：
 
 ```text
-HYDRA-UMC-DOCS-QA v0.1.4
+HYDRA-UMC-DOCS-QA v0.1.5
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 

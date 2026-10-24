@@ -26,7 +26,7 @@
 
 | | |
 |---|---|
-| Versión | `0.1.4` |
+| Versión | `0.1.5` |
 | Madurez | Funcional |
 | Tests | 74 |
 | Tecnología | Python / TF-IDF lexical retrieval |
@@ -198,7 +198,7 @@ run.bat
 real (`pytest tests/`). Salida esperada de un `run.sh` sin argumentos:
 
 ```text
-HYDRA-UMC-DOCS-QA v0.1.4
+HYDRA-UMC-DOCS-QA v0.1.5
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 

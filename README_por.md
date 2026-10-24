@@ -26,7 +26,7 @@
 
 | | |
 |---|---|
-| Versão | `0.1.4` |
+| Versão | `0.1.5` |
 | Maturidade | Funcional |
 | Testes | 74 |
 | Tecnologia | Python / TF-IDF lexical retrieval |
@@ -137,7 +137,7 @@ run.bat
 `build.sh`/`build.bat` nunca alteram a versão (só `python tools/hydra_project_tool.py bump` a sobe) e executam a suíte de testes real (`pytest tests/`). Saída esperada de um `run.sh` sem argumentos:
 
 ```text
-HYDRA-UMC-DOCS-QA v0.1.4
+HYDRA-UMC-DOCS-QA v0.1.5
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the ecosystem's own documentation.
 ```
 
