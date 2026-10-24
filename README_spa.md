@@ -160,13 +160,15 @@ hermanos (VLA-Engine, Voice-UI, Semantic-Planner):
 ```text
 HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
+│   ├── __init__.py          # Descripción y versión del paquete
 │   ├── ingest.py            # Ingesta real de Markdown -> DocChunks por encabezado
 │   ├── index.py              # Índice TF-IDF real (stdlib puro) + búsqueda por similitud coseno
 │   ├── cache.py              # Caché en disco del índice construido (JSON validado, nunca pickle) para `query` repetidos
 │   ├── corpus.py             # Corpus manifest: roots, exclusions, documents pinned by SHA-256
 │   ├── access.py             # Optional bearer token (needed for POST /reload and away from loopback)
 │   ├── api.py                  # Superficie JSON/HTTP plana (http.server de stdlib) sobre la lógica real de `query`
-│   └── main.py                # Punto de entrada + subcomandos reales `query`/`serve`
+│   ├── main.py                # Punto de entrada + subcomandos reales `query`/`serve`
+│   └── highlight.py           # Resaltado en consola de los términos encontrados (códigos ANSI simples)
 ├── tests/                   # Tests reales: ingesta, lista blanca, ranking, determinismo, api, CLI end-to-end
 ├── docs/
 │   └── CLI_REFERENCE.md    # Referencia completa de la CLI + API JSON/HTTP, cada ejemplo capturado de una ejecución real
@@ -175,7 +177,10 @@ HYDRA-UMC-DOCS-QA/
 │   └── hydra-umc-docs-qa.service # Unidad systemd de la API local de consultas de docs en la CM5
 ├── tools/
 │   ├── build_test.py        # Comprobación de compilación sin versionado
-│   └── ci_validate.py       # Validación de manifiesto/CHANGELOG/docs usada por CI
+│   ├── ci_validate.py       # Validación de manifiesto/CHANGELOG/docs usada por CI
+│   ├── _doc_policy.py       # Reglas de documentación compartidas por la familia (copia de la de HYDRA-UMC-SDK, mantenida en sincronía)
+│   ├── _readme_parity.py    # Comprobación de que los ocho README comparten estructura (copia de la de HYDRA-UMC-SDK, mantenida en sincronía)
+│   └── hydra_project_tool.py # Los mismos comandos en todos los repositorios: validate, test, ci, version, status, bump
 ├── build/                   # Salida de build local (ignorada por git)
 ├── pyproject.toml           # Metadatos del paquete (versión con incremento cuentakilómetros)
 ├── bump_version.py          # Incremento de versión tipo cuentakilómetros (solo lo ejecuta el comando `bump` explícito)

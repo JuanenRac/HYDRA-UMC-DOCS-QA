@@ -108,13 +108,15 @@ flowchart LR
 ```text
 HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
+│   ├── __init__.py          # パッケージの説明とバージョン
 │   ├── ingest.py            # 実際の Markdown 取り込み -> 見出し単位の DocChunk
 │   ├── index.py              # 実際の TF-IDF インデックス（標準ライブラリのみ）+ コサイン類似度検索
 │   ├── cache.py              # 構築したインデックスのディスクキャッシュ（検証済み JSON、pickle は使わない）、繰り返しの `query` 用
 │   ├── corpus.py             # Corpus manifest: roots, exclusions, documents pinned by SHA-256
 │   ├── access.py             # Optional bearer token (needed for POST /reload and away from loopback)
 │   ├── api.py                  # シンプルなJSON/HTTPサーフェス(stdlibのhttp.server)。実際の`query`ロジックを橋渡し
-│   └── main.py                # エントリポイント + 実際の `query`/`serve` サブコマンド
+│   ├── main.py                # エントリポイント + 実際の `query`/`serve` サブコマンド
+│   └── highlight.py           # 一致した検索語のコンソール強調表示 (単純な ANSI コード)
 ├── tests/                   # 実際のテスト：取り込み、アローリスト、ランキング、決定性、api、エンドツーエンド CLI
 ├── docs/
 │   └── CLI_REFERENCE.md    # CLI + JSON/HTTP API の完全なリファレンス、各例は実際の実行から取得
@@ -123,7 +125,10 @@ HYDRA-UMC-DOCS-QA/
 │   └── hydra-umc-docs-qa.service # ローカルCM5ドキュメント検索APIのsystemdユニット
 ├── tools/
 │   ├── build_test.py        # バージョンを増やさないビルドチェック
-│   └── ci_validate.py       # CI が使用するマニフェスト/CHANGELOG/ドキュメント検証
+│   ├── ci_validate.py       # CI が使用するマニフェスト/CHANGELOG/ドキュメント検証
+│   ├── _doc_policy.py       # ファミリー共通のドキュメント規則 (HYDRA-UMC-SDK のコピーで、同期を維持)
+│   ├── _readme_parity.py    # 8つの README が同じ構造であることの検査 (HYDRA-UMC-SDK のコピーで、同期を維持)
+│   └── hydra_project_tool.py # すべてのリポジトリで共通のコマンド: validate、test、ci、version、status、bump
 ├── build/                   # ローカルビルド出力（git 管理外）
 ├── pyproject.toml           # パッケージメタデータ（オドメーター式バージョン増加）
 ├── bump_version.py          # オドメーター式バージョンインクリメント（明示的な `bump` コマンドのみが実行）

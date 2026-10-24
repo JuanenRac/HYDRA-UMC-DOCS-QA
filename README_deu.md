@@ -166,13 +166,15 @@ Voice-UI, Semantic-Planner) ein:
 ```text
 HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
+│   ├── __init__.py          # Paketbeschreibung und Version
 │   ├── ingest.py            # Echte Markdown-Ingestion -> DocChunks pro Überschrift
 │   ├── index.py              # Echter TF-IDF-Index (nur stdlib) + Kosinus-Ähnlichkeitssuche
 │   ├── cache.py              # Festplatten-Cache des gebauten Index (validiertes JSON, nie pickle) für wiederholte `query`-Läufe
 │   ├── corpus.py             # Corpus manifest: roots, exclusions, documents pinned by SHA-256
 │   ├── access.py             # Optional bearer token (needed for POST /reload and away from loopback)
 │   ├── api.py                  # Einfache JSON/HTTP-Oberfläche (stdlib http.server) über die echte `query`-Logik
-│   └── main.py                # Einstiegspunkt + echte `query`/`serve`-Subcommands
+│   ├── main.py                # Einstiegspunkt + echte `query`/`serve`-Subcommands
+│   └── highlight.py           # Hervorhebung der gefundenen Suchbegriffe in der Konsole (einfache ANSI-Codes)
 ├── tests/                   # Echte Tests: Ingestion, Positivliste, Ranking, Determinismus, api, End-to-End-CLI
 ├── docs/
 │   └── CLI_REFERENCE.md    # Vollständige CLI- + JSON/HTTP-API-Referenz, jedes Beispiel aus einem echten Lauf erfasst
@@ -181,7 +183,10 @@ HYDRA-UMC-DOCS-QA/
 │   └── hydra-umc-docs-qa.service # systemd-Unit der lokalen CM5-Docs-Query-API
 ├── tools/
 │   ├── build_test.py        # Nicht-versionierender Build-Check
-│   └── ci_validate.py       # Manifest/CHANGELOG/Docs-Validierung, von CI genutzt
+│   ├── ci_validate.py       # Manifest/CHANGELOG/Docs-Validierung, von CI genutzt
+│   ├── _doc_policy.py       # Von der Familie geteilte Dokumentationsregeln (Kopie der von HYDRA-UMC-SDK, synchron gehalten)
+│   ├── _readme_parity.py    # Prüfung, dass die acht READMEs dieselbe Struktur haben (Kopie der von HYDRA-UMC-SDK, synchron gehalten)
+│   └── hydra_project_tool.py # Dieselben Befehle in jedem Repository: validate, test, ci, version, status, bump
 ├── build/                   # Lokale Build-Ausgabe (von git ignoriert)
 ├── pyproject.toml           # Paket-Metadaten (Version per Kilometerzähler-Inkrement)
 ├── bump_version.py          # Versionserhöhung im Kilometerzähler-Stil (nur vom expliziten `bump`-Befehl ausgeführt)

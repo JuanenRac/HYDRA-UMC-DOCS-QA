@@ -107,13 +107,15 @@ flowchart LR
 ```text
 HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
+│   ├── __init__.py          # 包说明与版本
 │   ├── ingest.py            # 真实的 Markdown 摄取 -> 按标题划分的 DocChunk
 │   ├── index.py              # 真实的 TF-IDF 索引（仅标准库）+ 余弦相似度搜索
 │   ├── cache.py              # 已构建索引的磁盘缓存（经校验的 JSON，绝不使用 pickle），供重复的 `query` 使用
 │   ├── corpus.py             # Corpus manifest: roots, exclusions, documents pinned by SHA-256
 │   ├── access.py             # Optional bearer token (needed for POST /reload and away from loopback)
 │   ├── api.py                  # 简洁的 JSON/HTTP 接口(基于 stdlib http.server),桥接真实的 `query` 逻辑
-│   └── main.py                # 入口点 + 真实的 `query`/`serve` 子命令
+│   ├── main.py                # 入口点 + 真实的 `query`/`serve` 子命令
+│   └── highlight.py           # 在控制台高亮匹配的搜索词 (普通 ANSI 码)
 ├── tests/                   # 真实测试：摄取、白名单、排序、确定性、api、端到端 CLI
 ├── docs/
 │   └── CLI_REFERENCE.md    # 完整的 CLI + JSON/HTTP API 参考，每个示例均来自真实运行
@@ -122,7 +124,10 @@ HYDRA-UMC-DOCS-QA/
 │   └── hydra-umc-docs-qa.service # 本地 CM5 文档查询 API 的 systemd 单元
 ├── tools/
 │   ├── build_test.py        # 不递增版本号的构建检查
-│   └── ci_validate.py       # CI 使用的清单/CHANGELOG/文档校验
+│   ├── ci_validate.py       # CI 使用的清单/CHANGELOG/文档校验
+│   ├── _doc_policy.py       # 家族共享的文档规则 (HYDRA-UMC-SDK 的副本,保持同步)
+│   ├── _readme_parity.py    # 检查八个 README 结构一致 (HYDRA-UMC-SDK 的副本,保持同步)
+│   └── hydra_project_tool.py # 每个仓库相同的命令: validate、test、ci、version、status、bump
 ├── build/                   # 本地构建输出（已被 git 忽略）
 ├── pyproject.toml           # 包元数据（里程表式递增版本号）
 ├── bump_version.py          # 里程表式版本递增（仅由显式 `bump` 命令运行）

@@ -105,13 +105,15 @@ Este repositório é um **filho** da família Cognitive AI Node - o seu pai, o [
 ```text
 HYDRA-UMC-DOCS-QA/
 ├── src/hydra_umc_docs_qa/
+│   ├── __init__.py          # Descrição e versão do pacote
 │   ├── ingest.py            # Ingestão real de Markdown -> DocChunks delimitados por título
 │   ├── index.py              # Índice TF-IDF real só com a biblioteca padrão + pesquisa por similaridade de cosseno
 │   ├── cache.py              # Cache em disco do índice construído (JSON validado, nunca pickle) para `query` repetidos
 │   ├── corpus.py             # Corpus manifest: roots, exclusions, documents pinned by SHA-256
 │   ├── access.py             # Optional bearer token (needed for POST /reload and away from loopback)
 │   ├── api.py                  # Superfície JSON/HTTP simples (http.server da biblioteca padrão) sobre a lógica real do `query`
-│   └── main.py                # Ponto de entrada + subcomandos reais `query`/`serve`
+│   ├── main.py                # Ponto de entrada + subcomandos reais `query`/`serve`
+│   └── highlight.py           # Realce na consola dos termos encontrados (códigos ANSI simples)
 ├── tests/                   # Testes reais: ingestão, lista de permissões, ordenação, determinismo, api, CLI de ponta a ponta
 ├── docs/
 │   └── CLI_REFERENCE.md    # Referência completa da CLI + API JSON/HTTP, cada exemplo capturado de uma execução real
@@ -120,7 +122,10 @@ HYDRA-UMC-DOCS-QA/
 │   └── hydra-umc-docs-qa.service # Unidade systemd da API local de consulta de documentos da CM5
 ├── tools/
 │   ├── build_test.py        # Verificação de compilação sem alterar versões
-│   └── ci_validate.py       # Validação de manifesto/CHANGELOG/docs usada pelo CI
+│   ├── ci_validate.py       # Validação de manifesto/CHANGELOG/docs usada pelo CI
+│   ├── _doc_policy.py       # Regras de documentação partilhadas pela família (cópia da de HYDRA-UMC-SDK, mantida em sincronia)
+│   ├── _readme_parity.py    # Verificação de que os oito README partilham a mesma estrutura (cópia da de HYDRA-UMC-SDK, mantida em sincronia)
+│   └── hydra_project_tool.py # Os mesmos comandos em todos os repositórios: validate, test, ci, version, status, bump
 ├── build/                   # Saída de compilação local (ignorada pelo git)
 ├── pyproject.toml           # Metadados do pacote (versão subida só pelo comando bump explícito)
 ├── bump_version.py          # Subida de versão ao estilo conta-quilómetros (executada só pelo comando `bump` explícito)
