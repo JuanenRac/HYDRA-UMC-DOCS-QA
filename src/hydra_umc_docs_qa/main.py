@@ -14,11 +14,14 @@ the Hailo-10 LLM synthesis step the README's own roadmap describes.
 from __future__ import annotations
 
 import argparse
+import signal
 import sys
 from pathlib import Path
 
 from . import __version__
-from .api import DocsQaServer, build_server_index
+from .access import bind_problem, load_token
+from .api import DocsQaServer, build_corpus_index, build_server_index
+from .corpus import CorpusError, collect, load_manifest
 from .cache import compute_cache_key, load_cached_index, save_cached_index
 from .highlight import highlight_terms
 from .ingest import RejectedDocument, RejectionReason, ingest_markdown_file, partition_allowed_paths
@@ -44,17 +47,37 @@ def _print_identity() -> None:
     print(ROLE)
 
 
-def _run_query(question: str, docs: list[Path], top_k: int) -> int:
-    valid_paths, rejected = partition_allowed_paths(docs)
+def _run_query(
+    question: str,
+    docs: list[Path],
+    top_k: int,
+    *,
+    corpus: Path | None = None,
+    scorer: str = "tfidf",
+    stem: bool = False,
+    heading_boost: int = 1,
+) -> int:
+    if corpus is not None:
+        # the documents come from the manifest (roots, exclusions, pins); the disk cache is for the plain --docs index only
+        try:
+            allowed, refused = collect(load_manifest(corpus))
+        except CorpusError as exc:
+            print(f"ERROR: {exc}")
+            return 2
+        valid_paths = allowed
+        rejected = refused
+    else:
+        valid_paths, rejected = partition_allowed_paths(docs)
     for doc in rejected:
         print(f"REJECTED {doc.describe()}")
+    use_cache = corpus is None and scorer == "tfidf" and not stem and heading_boost == 1
 
     # Real disk-persisted index cache (cache.py): a cache hit here skips
     # re-reading and re-tokenizing every document and rebuilding the
     # whole TF-IDF index from scratch - the real cost `query` otherwise
     # pays on every single invocation, even against an unchanged corpus.
     cache_key = compute_cache_key(valid_paths)
-    cached = load_cached_index(cache_key)
+    cached = load_cached_index(cache_key) if use_cache else None
     if cached is not None:
         index, undecodable = cached
     else:
@@ -65,8 +88,9 @@ def _run_query(question: str, docs: list[Path], top_k: int) -> int:
                 chunks.extend(ingest_markdown_file(path))
             except UnicodeDecodeError:
                 undecodable.append(RejectedDocument(path=path, reason=RejectionReason.UNDECODABLE))
-        index = build_index(chunks)
-        save_cached_index(cache_key, index, undecodable)
+        index = build_index(chunks, scorer=scorer, stem=stem, heading_boost=heading_boost)
+        if use_cache:
+            save_cached_index(cache_key, index, undecodable)
 
     for doc in undecodable:
         print(f"REJECTED {doc.describe()}")
@@ -96,13 +120,49 @@ def _run_query(question: str, docs: list[Path], top_k: int) -> int:
         if len(snippet) > _SNIPPET_LEN:
             snippet = snippet[:_SNIPPET_LEN].rstrip() + "..."
         snippet = highlight_terms(snippet, question)
-        print(f"{rank}. [{result.score:.3f}] {result.chunk.source}#{result.chunk.index} - {heading}")
+        cited = f"{result.chunk.source}#{result.chunk.index}" + (f"@{result.chunk.sha256[:12]}" if result.chunk.sha256 else "")
+        print(f"{rank}. [{result.score:.3f}] {cited} - {heading}")
         print(f"   {snippet}\n")
     return 0
 
 
-def _run_serve(addr: str, port: int, docs: list[Path]) -> int:
-    index, ingested_sources, rejected_descriptions = build_server_index(docs)
+def _run_serve(
+    addr: str,
+    port: int,
+    docs: list[Path],
+    *,
+    corpus: Path | None = None,
+    scorer: str = "tfidf",
+    stem: bool = False,
+    heading_boost: int = 1,
+    token_file: str | None = None,
+    min_score: float = 0.0,
+    min_coverage: float = 0.0,
+) -> int:
+    try:
+        token = load_token(token_file)
+        problem = bind_problem(addr, token)
+        if problem:
+            print(f"error: {problem}", file=sys.stderr)
+            return 2
+        if not (0.0 <= min_coverage <= 1.0) or min_score < 0.0:
+            raise ValueError("--min-score must be 0 or more and --min-coverage between 0 and 1")
+        options = {"scorer": scorer, "stem": stem, "heading_boost": heading_boost}
+        if corpus is not None:
+            manifest = load_manifest(corpus)
+
+            def loader():
+                # the manifest is read again on every reload: a root or a pin that was edited takes effect
+                return build_corpus_index(load_manifest(corpus), **options)
+
+            build_corpus_index(manifest, **options)  # fails here, before the port is bound, if the options are unusable
+        else:
+            def loader():
+                return build_server_index(docs, **options)
+        index, ingested_sources, rejected_descriptions = loader()
+    except (ValueError, CorpusError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
     for description in rejected_descriptions:
         print(f"REJECTED {description}")
     if index is None:
@@ -110,9 +170,20 @@ def _run_serve(addr: str, port: int, docs: list[Path]) -> int:
     else:
         print(f"[docs-qa] indexed {len(ingested_sources)} document(s): {', '.join(ingested_sources)}")
 
-    server = DocsQaServer((addr, port), index, ingested_sources, rejected_descriptions)
+    server = DocsQaServer(
+        (addr, port), index, ingested_sources, rejected_descriptions,
+        loader=loader, token=token, min_score=min_score, min_coverage=min_coverage,
+    )
     print(f"[docs-qa] HTTP API listening on {addr}:{port}")
-    print("[docs-qa] GET /query?q=...&top_k=N, GET /stats")
+    print("[docs-qa] GET /query?q=...&top_k=N, GET /stats" + (", POST /reload (and SIGHUP)" if token else ""))
+    if not token:
+        print("[docs-qa] no token: reload is off (give --token-file to allow POST /reload); SIGHUP reloads the documents all the same")
+    if hasattr(signal, "SIGHUP"):
+        def _on_hangup(_signum, _frame) -> None:
+            ok, message = server.reload()
+            print(f"[docs-qa] SIGHUP: {'reloaded' if ok else 'reload failed - ' + message}")
+
+        signal.signal(signal.SIGHUP, _on_hangup)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
@@ -121,6 +192,16 @@ def _run_serve(addr: str, port: int, docs: list[Path]) -> int:
         server.server_close()
         print("[docs-qa] shutting down")
     return 0
+
+
+def _add_retrieval_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--corpus", type=Path, default=None,
+        help="Corpus manifest (JSON: roots, exclude patterns, pinned documents with their SHA-256; see corpus.py) instead of --docs.",
+    )
+    parser.add_argument("--scorer", choices=("tfidf", "bm25"), default="tfidf", help="Ranking: cosine over TF-IDF (default) or BM25.")
+    parser.add_argument("--stem", action="store_true", help="Strip the common endings of a word before indexing and looking it up.")
+    parser.add_argument("--heading-boost", type=int, default=1, dest="heading_boost", help="Index the words of a section's heading, repeated this many times minus one (1 to 10; default 1: headings are not indexed).")
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -142,6 +223,7 @@ def build_parser() -> argparse.ArgumentParser:
     query_parser.add_argument(
         "--top-k", type=int, default=5, help="Maximum number of passages to print (default: 5)."
     )
+    _add_retrieval_options(query_parser)
 
     serve_parser = subparsers.add_parser(
         "serve",
@@ -151,6 +233,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     serve_parser.add_argument("--addr", default="127.0.0.1", help="address to bind the HTTP API to")
     serve_parser.add_argument("--port", type=int, default=8110, help="port for the HTTP API")
+    _add_retrieval_options(serve_parser)
+    serve_parser.add_argument(
+        "--token-file", default=None, dest="token_file",
+        help="File with the bearer token GET /query and POST /reload require (or HYDRA_UMC_DOCS_QA_TOKEN). Needed to bind an address that "
+             "is not loopback, and without one POST /reload is refused.",
+    )
+    serve_parser.add_argument(
+        "--min-score", type=float, default=0.0, dest="min_score",
+        help="Lowest score the best section may have for a question to count as answered (0: any match). A request may ask for more, never less.",
+    )
+    serve_parser.add_argument(
+        "--min-coverage", type=float, default=0.0, dest="min_coverage",
+        help="Smallest share (0 to 1) of the words of the question that some section must hold (0: any match). A request may ask for more, never less.",
+    )
     serve_parser.add_argument(
         "--docs",
         nargs="+",
@@ -177,10 +273,17 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "query":
         docs = args.docs if args.docs is not None else list(_DEFAULT_DOCS)
-        return _run_query(args.question, docs, args.top_k)
+        try:
+            return _run_query(args.question, docs, args.top_k, corpus=args.corpus, scorer=args.scorer, stem=args.stem, heading_boost=args.heading_boost)
+        except ValueError as exc:
+            print(f"ERROR: {exc}")
+            return 2
     if args.command == "serve":
         docs = args.docs if args.docs is not None else list(_DEFAULT_DOCS)
-        return _run_serve(args.addr, args.port, docs)
+        return _run_serve(
+            args.addr, args.port, docs, corpus=args.corpus, scorer=args.scorer, stem=args.stem, heading_boost=args.heading_boost,
+            token_file=args.token_file, min_score=args.min_score, min_coverage=args.min_coverage,
+        )
 
     _print_identity()
     return 0

@@ -49,6 +49,7 @@
 * 🎯 **确定性评分：** 排序是语料库和查询文本的纯函数，与解释器逐进程的哈希种子无关。*（已实现）*
 * 🗄️ **无法执行代码的索引缓存：** CLI 的 `query` 会把构建好的索引缓存到用户缓存目录（`HYDRA_UMC_DOCS_QA_CACHE_DIR`，否则 `XDG_CACHE_HOME`，否则 `~/.cache/hydra-umc-docs-qa`），缓存键由每个文档的路径、大小和修改时间构成。现在它是经过校验的 JSON 文件；以前是 `pickle`，会执行文件携带的任何代码，因此同一用户的任何其他进程都可以在那里放置文件，并让下一次 `query` 执行它。被放置、被截断或结构错误的文件只会被当作一次缓存未命中。*（已实现）*
 * 🌐 **真实的 JSON/HTTP API：** `serve` 子命令将同样的 TF-IDF 搜索作为一个长期运行的本地服务运行(默认 `127.0.0.1:8110`)，通过 `GET /query?q=...&top_k=N` 和 `GET /stats` 提供——语料库只在启动时摄取并建立索引一次，而非每次请求都重来。真实抓取的示例见 [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md)。*（已实现）*
+* 📚 **语料清单、BM25、「无答案」、重新加载以及可核对的引用:** `--corpus 文件`(JSON:`roots`、`exclude` 模式以及按 SHA-256 固定的 `documents`)取代自由的 `--docs`:只读取根目录,字节发生变化的固定文档会被排除,且存在固定项时,根目录里新增的文件在有人固定之前不可引用。每个段落都带有其文件的哈希,因此结果引用 `来源#段落@sha256`。`--scorer bm25`、`--stem`(谨慎的词尾剥离)和 `--heading-boost N` 改善短文本上的排序(默认值就是索引一直以来的样子)。服务可以拒绝回答:`--min-score` 和 `--min-coverage`(某个段落包含的问题词所占比例)会使 `GET /query` 在没有上下文的情况下回答 `answerable: false`,而不是给出只与问题共享一个词的段落(请求可以要求更严,不能更松)。`POST /reload`(需要 Bearer 令牌;也可用 SIGHUP)无需重启即可从磁盘重建索引,失败时保留旧索引;`GET /stats` 报告片段数量、索引构建时间和最近一次重新加载错误。*(已用合成和真实 Markdown 试过,阈值需要用真实问题调整)*
 * 🤖 **有据可查的推理：** 答案严格基于所提供的项目文档。
 * 🎙️ **语音集成：** 与 VOICE-UI 集成，实现免提维护支持。
 * 🛠️ **代码感知：** 能够解释固件模块和 CAN 协议细节。
@@ -96,6 +97,8 @@ HYDRA-UMC-DOCS-QA/
 │   ├── ingest.py            # 真实的 Markdown 摄取 -> 按标题划分的 DocChunk
 │   ├── index.py              # 真实的 TF-IDF 索引（仅标准库）+ 余弦相似度搜索
 │   ├── cache.py              # 已构建索引的磁盘缓存（经校验的 JSON，绝不使用 pickle），供重复的 `query` 使用
+│   ├── corpus.py             # Corpus manifest: roots, exclusions, documents pinned by SHA-256
+│   ├── access.py             # Optional bearer token (needed for POST /reload and away from loopback)
 │   ├── api.py                  # 简洁的 JSON/HTTP 接口(基于 stdlib http.server),桥接真实的 `query` 逻辑
 │   └── main.py                # 入口点 + 真实的 `query`/`serve` 子命令
 ├── tests/                   # 真实测试：摄取、白名单、排序、确定性、api、端到端 CLI

@@ -11,9 +11,10 @@ CHANGELOG in this ecosystem is already written in.
 """
 from __future__ import annotations
 
+import hashlib
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import Enum
 from pathlib import Path
 from typing import Iterable
@@ -43,6 +44,14 @@ class DocChunk:
     heading: str
     text: str
     index: int = 0
+    # SHA-256 of the file the section came from (hexadecimal); empty for text that did not come from a file
+    sha256: str = ""
+
+    @property
+    def citation(self) -> str:
+        """`source#index@sha256`: which document, which section of it, and exactly which bytes of it. Anyone holding the file can recompute the
+        hash and the section, so a citation can be checked and not just believed."""
+        return f"{self.source}#{self.index}" + (f"@{self.sha256}" if self.sha256 else "")
 
 
 _FENCE_RE = re.compile(r"^(`{3,}|~{3,})")
@@ -127,9 +136,11 @@ def canonical_source(path: Path) -> str:
 
 
 def ingest_markdown_file(path: Path) -> list[DocChunk]:
-    """Ingest one real Markdown file from disk."""
-    text = _CONTROL_CHARS_RE.sub("", path.read_text(encoding="utf-8"))
-    return ingest_markdown_text(text, source=canonical_source(path))
+    """Ingest one real Markdown file from disk. Every section carries the SHA-256 of the file's bytes (see `DocChunk.citation`)."""
+    raw = path.read_bytes()
+    text = _CONTROL_CHARS_RE.sub("", raw.decode("utf-8"))
+    digest = hashlib.sha256(raw).hexdigest()
+    return [replace(chunk, sha256=digest) for chunk in ingest_markdown_text(text, source=canonical_source(path))]
 
 
 def ingest_markdown_files(paths: Iterable[Path]) -> list[DocChunk]:
@@ -156,6 +167,8 @@ class RejectionReason(str, Enum):
     TOO_LARGE = "too_large"
     UNDECODABLE = "undecodable"
     SYMLINK = "symlink"
+    OUTSIDE_ROOTS = "outside_roots"
+    HASH_MISMATCH = "hash_mismatch"
 
 
 @dataclass(frozen=True)
@@ -172,6 +185,10 @@ class RejectedDocument:
             return f"{self.path}: is a symbolic link - not followed, so a link cannot expose a file outside the documents"
         if self.reason is RejectionReason.UNDECODABLE:
             return f"{self.path}: not valid UTF-8 - skipped, not ingested as garbled text"
+        if self.reason is RejectionReason.OUTSIDE_ROOTS:
+            return f"{self.path}: is pinned in the corpus manifest but lies outside every one of its roots"
+        if self.reason is RejectionReason.HASH_MISMATCH:
+            return f"{self.path}: its SHA-256 is not the one pinned in the corpus manifest - edited since it was approved, so not ingested"
         suffix = self.path.suffix or "(none)"
         return f"{self.path}: disallowed extension {suffix} - only {', '.join(sorted(ALLOWED_SUFFIXES))} are ingested"
 

@@ -37,7 +37,7 @@ from .index import TfidfIndex
 from .ingest import DocChunk, RejectedDocument, RejectionReason
 
 # 2: JSON instead of pickle (a version 1 file is a .pkl and is never read)
-_CACHE_FORMAT_VERSION = 2
+_CACHE_FORMAT_VERSION = 3
 
 
 def cache_dir() -> Path:
@@ -102,9 +102,9 @@ def _index_from_json(data: object) -> TfidfIndex:
         raise ValueError("chunks and chunk_vectors do not match")
     chunks = []
     for item in raw_chunks:
-        if not (isinstance(item, list) and len(item) == 4 and all(isinstance(x, str) for x in item[:3]) and isinstance(item[3], int) and not isinstance(item[3], bool)):
-            raise ValueError("a chunk is not [source, heading, text, index]")
-        chunks.append(DocChunk(source=item[0], heading=item[1], text=item[2], index=item[3]))
+        if not (isinstance(item, list) and len(item) == 5 and all(isinstance(x, str) for x in item[:3]) and isinstance(item[3], int) and not isinstance(item[3], bool) and isinstance(item[4], str)):
+            raise ValueError("a chunk is not [source, heading, text, index, sha256]")
+        chunks.append(DocChunk(source=item[0], heading=item[1], text=item[2], index=item[3], sha256=item[4]))
     return TfidfIndex(
         chunks=tuple(chunks),
         idf=_weights(data.get("idf")),
@@ -114,7 +114,7 @@ def _index_from_json(data: object) -> TfidfIndex:
 
 def _index_to_json(index: TfidfIndex) -> dict[str, object]:
     return {
-        "chunks": [[c.source, c.heading, c.text, c.index] for c in index.chunks],
+        "chunks": [[c.source, c.heading, c.text, c.index, c.sha256] for c in index.chunks],
         "idf": index.idf,
         "chunk_vectors": list(index.chunk_vectors),
     }

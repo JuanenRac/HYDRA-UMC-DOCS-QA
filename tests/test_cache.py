@@ -93,7 +93,7 @@ def test_the_cache_file_is_plain_json_data(tmp_path: Path) -> None:
 
     payload = json.loads(file.read_text(encoding="utf-8"))
 
-    assert payload["format_version"] == 2
+    assert payload["format_version"] == 3
     assert file.suffix == ".json"
 
 
