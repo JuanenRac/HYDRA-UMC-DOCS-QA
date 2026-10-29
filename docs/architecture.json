@@ -1,0 +1,102 @@
+{
+  "repo": "HYDRA-UMC-DOCS-QA",
+  "ecosystem": "hydra",
+  "tagline": "Search the ecosystem's own documents and quote the passage: lexical retrieval, no generated answer.",
+  "description": "HYDRA-UMC-DOCS-QA splits the Markdown documents of a corpus into chunks by heading, builds a TF-IDF or BM25 index (cached on disk) and answers a question with the passages that match best, each cited as file and chunk number. There is no language model in this repository: a question that shares no words with the corpus gets an honest 'no relevant passages'.",
+  "columns": [
+    "WHO ASKS",
+    "THIS REPOSITORY",
+    "WHAT IT READS"
+  ],
+  "nodes": [
+    {
+      "id": "user",
+      "column": 0,
+      "level": "external",
+      "title": "Person, planner, voice",
+      "lines": [
+        "CLI query, or GET /query",
+        "over HTTP"
+      ],
+      "title_size": 12
+    },
+    {
+      "id": "api",
+      "column": 1,
+      "level": "contract",
+      "title": "api.py, main.py",
+      "lines": [
+        "JSON/HTTP, optional token;",
+        "top_k at most 50"
+      ],
+      "code": [
+        "src/hydra_umc_docs_qa/api.py::MAX_TOP_K",
+        "src/hydra_umc_docs_qa/access.py"
+      ]
+    },
+    {
+      "id": "idx",
+      "column": 1,
+      "level": "tested",
+      "title": "index.py, cache.py",
+      "lines": [
+        "TF-IDF or BM25 over the",
+        "chunks; index cache"
+      ],
+      "code": [
+        "src/hydra_umc_docs_qa/index.py::SCORERS",
+        "src/hydra_umc_docs_qa/cache.py::MAX_CACHE_ENTRIES"
+      ]
+    },
+    {
+      "id": "ing",
+      "column": 1,
+      "level": "tested",
+      "title": "ingest.py, corpus.py",
+      "lines": [
+        "Markdown only, 4 MiB each;",
+        "corpus manifest with SHA-256"
+      ],
+      "code": [
+        "src/hydra_umc_docs_qa/ingest.py::MAX_DOCUMENT_BYTES",
+        "src/hydra_umc_docs_qa/corpus.py"
+      ]
+    },
+    {
+      "id": "docs",
+      "column": 2,
+      "level": "external",
+      "title": "Markdown documents",
+      "lines": [
+        "the READMEs and docs of the",
+        "ecosystem"
+      ],
+      "title_size": 12
+    }
+  ],
+  "edges": [
+    {
+      "from": "user",
+      "to": "api",
+      "label": "question",
+      "level": "tested"
+    },
+    {
+      "from": "api",
+      "to": "idx",
+      "level": "tested"
+    },
+    {
+      "from": "idx",
+      "to": "ing",
+      "level": "tested"
+    },
+    {
+      "from": "ing",
+      "to": "docs",
+      "label": "reads",
+      "level": "tested"
+    }
+  ],
+  "footer": "No language model and no Hailo-10 run in this repository: the answer is the cited passage."
+}

@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **README in the universal layout:** the README and its seven translations follow the layout that the four families share (22 sections in a fixed order), with an architecture picture and a repository-structure picture drawn from `docs/architecture.json` and `docs/structure.json`; the CI validator checks both pictures and the file tree. Where the repository has a service or an MQTT transport, the README now says how to start it and which environment variables it reads.
+
 - **The layout of the README is checked in the CI:** the validator runs `tools/universal_readme_check.py` and lists, as a warning, what differs from the universal layout of the README.
 
 ## [0.1.5] - The READMEs no longer say the assistant has "read" the whole ecosystem
@@ -196,6 +198,7 @@ ingests the valid one and reports the invalid one by name.
   firmware/os/models of its own).
 
 ## [0.0.5] - Deterministic scoring, traceable citations, real document allowlist
+
 - **A real document allowlist gate** (`ingest.py`'s `validate_doc_path`/`ingest_allowed_markdown_files`) - only `.md`/`.markdown` files that actually exist on disk are ever ingested and cited. Every other `--docs` path (missing, or a non-Markdown file - a stray `.env`, firmware binary, unrelated source file) is rejected with a distinct, printed reason (`file not found` vs `disallowed extension`) instead of being silently skipped or silently read as if it were legitimate documentation. `query` now prints one `REJECTED ...` line per bad path, still answers from whatever real documents remain, and reports the existing honest "No documents ingested" failure only when nothing valid is left.
 - **Traceable citations**: `DocChunk` now carries a real `index` - its 0-based ordinal position within its own source document - alongside `source`/`heading`. Citations print as `source#index` (e.g. `manual.md#1`), a stable key that disambiguates repeated headings within one file and lets a citation be deterministically recovered by re-parsing the same source (proven by a real round-trip test).
 - 21 new tests (`test_ingest.py`, `test_cli.py`, `test_determinism.py`) covering the full allowlist validation matrix, the citation round-trip, and cross-process output determinism - 26 tests total.
@@ -203,6 +206,7 @@ ingests the valid one and reports the invalid one by name.
 - `index.py`'s cosine similarity summed shared TF-IDF terms in `dict.keys() & dict.keys()` set order, which depends on CPython's per-process string hash randomization (`PYTHONHASHSEED`) rather than only on the corpus and query text - a real (if narrow) determinism hole for a retrieval system whose whole point is reproducible answers. Sorting the shared terms before summing removes the hash-seed dependency entirely.
 
 ## [0.0.4] - Real v0 lexical retrieval ("Local Vector Search")
+
 - `ingest.py` - real Markdown ingestion: splits a document into
   heading-scoped `DocChunk`s (text before the first heading is kept
   under an empty heading so front-matter is never silently dropped).
@@ -236,10 +240,11 @@ ingests the valid one and reports the invalid one by name.
   fix, with a regression test.
 
 ## [0.0.2]
+
 - Initial Python scaffolding: `pyproject.toml` (setuptools, src-layout),
   `src/hydra_umc_docs_qa/__init__.py` + `main.py` (real entry point -
   prints identity/version/role, exits 0).
-- `bump_version.py` - odometer-style version bump applied to
+- `bump_version.py` - version bump applied to
   `pyproject.toml` and mirrored into `__init__.py`.
 - `build.sh` / `build.bat` - create/activate a venv, install the package
   editable, verify it compiles and imports.

@@ -1,26 +1,33 @@
+<!-- =============================================================================
+HYDRA-UMC-DOCS-QA - Document search assistant
+Copyright (C) JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+GPL-3.0-or-later - see LICENSE
+============================================================================= -->
+
 <p align="center">
   <img src="images/HYDRA_UMC_BANNER.svg" alt="HYDRA-UMC-DOCS-QA banner" width="100%">
 </p>
 
-# 📚 HYDRA-UMC-DOCS-QA
+# 🔎 HYDRA-UMC-DOCS-QA
 
 <p align="center"><a href="README.md">🇺🇸 English</a> | <a href="README_spa.md">🇪🇸 Español</a> | <a href="README_fra.md">🇫🇷 Français</a> | 🇮🇹 <b>Italiano</b> | <a href="README_deu.md">🇩🇪 Deutsch</a> | <a href="README_zho.md">🇨🇳 简体中文</a> | <a href="README_jpn.md">🇯🇵 日本語</a> | <a href="README_por.md">🇵🇹 Português</a></p>
 
 ### 🤖 Assistente AI basato su RAG per la manutenzione e la documentazione dell'hardware
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Licenza-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
-  <img src="https://img.shields.io/badge/Metodo-RAG%20%2F%20Ricerca%20vettoriale-orange.svg" alt="RAG">
-  <img src="https://img.shields.io/badge/Piattaforma-Hailo--10-green.svg" alt="Hailo-10">
+  <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
+  <img src="https://img.shields.io/badge/Method-RAG%20%2F%20Vector%20Search-orange.svg" alt="Method">
+  <img src="https://img.shields.io/badge/Platform-Hailo--10-green.svg" alt="Platform">
+  <img src="https://img.shields.io/badge/Tests-100%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Version-0.1.5-0f6cbd.svg" alt="Version">
+  <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
 
 ---
 
-**Controllo di onestà - cosa funziona davvero oggi:** l'ingestione Markdown (`ingest.py`), l'indice TF-IDF/similarità coseno basato solo sulla stdlib (`index.py`), la superficie JSON/HTTP `serve` (`api.py`) e la CLI `query`/`serve` (`main.py`) sono tutti reali e testati (74 test superati in `tests/test_ingest.py`, `tests/test_index.py`, `tests/test_api.py`, `tests/test_cli.py`, `tests/test_determinism.py`). Questo è un vero recupero lessicale (TF-IDF) solo su Markdown locale - non esiste ancora alcun passaggio di sintesi tramite LLM, quindi una corrispondenza restituisce il passaggio citato testualmente, e una non corrispondenza restituisce un onesto `No relevant passages found` invece di una risposta generata. Ciò che è aspirazionale, non implementato: le voci "Voice Integration" (relay mani libere VOICE-UI) e "Code Awareness" (spiegare moduli firmware/dettagli del protocollo CAN) qui sotto sono elementi di roadmap senza alcun codice dietro in questo repository oggi, e nemmeno l'ingestione PDF oltre `.md`/`.markdown` esiste. Vedi `CHANGELOG.md` per ciò che è stato consegnato esattamente finora.
+> **Stato di sicurezza (safety e security):** questo ecosistema non è un sistema di sicurezza certificato. Non esiste ancora un percorso E-STOP hardware, né limiti o interblocchi imposti dal firmware, né un comando di movimento verificato; le immagini firmware sono controllate con CRC32 e un HMAC-SHA256 a chiave condivisa, non con una firma asimmetrica; TLS e TLS reciproco sono opzionali e disattivati per impostazione predefinita; nessuna scheda propria è stata ancora assemblata o provata. Leggi la [base di sicurezza](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md) e il [modello delle minacce](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md) prima di fidarti di qualsiasi affermazione qui per la sicurezza di una persona.
 
 ---
-
-> **Stato di sicurezza (safety e security):** questo ecosistema non è un sistema di sicurezza certificato. Non esiste ancora un percorso E-STOP hardware, né limiti o interblocchi imposti dal firmware, né un comando di movimento verificato; le immagini firmware sono controllate con CRC32 e un HMAC-SHA256 a chiave condivisa, non con una firma asimmetrica; TLS e TLS reciproco sono opzionali e disattivati per impostazione predefinita; nessuna scheda propria è stata ancora assemblata o provata. Leggi la [base di sicurezza](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md) e il [modello delle minacce](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md) prima di fidarti di qualsiasi affermazione qui per la sicurezza di una persona.
 
 ## 📋 In breve
 
@@ -28,10 +35,12 @@
 |---|---|
 | Versione | `0.1.5` |
 | Maturità | Funzionale |
-| Test | 74 |
+| Test | 100 (`python -m pytest -q tests`) |
 | Tecnologia | Python / TF-IDF lexical retrieval |
 | Destinazione | Il Raspberry Pi CM5 di una cella HYDRA-UMC |
 | Su hardware reale | Non ancora: per questa versione non risulta alcuna esecuzione su hardware reale |
+
+**Vai a:** [Panoramica](#-panoramica) · [Architettura](#-architettura) · [Funzionalità](#-funzionalità) · [Sicurezza e protezione](#-sicurezza-e-protezione) · [Interfacce](#-interfacce) · [Configurazione](#-configurazione) · [Avvio rapido](#-avvio-rapido) · [Test](#-test) · [Risoluzione dei problemi](#-risoluzione-dei-problemi) · [Struttura del repository](#-struttura-del-repository) · [Progetti correlati](#-progetti-correlati)
 
 ## 🚦 Stato del progetto
 
@@ -42,37 +51,28 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 | Area | Stato | Cosa significa qui |
 |---|---|---|
 | Software | 🟡 | Funziona per il suo scopo principale; la verifica di onestà qui sopra elenca ciò che manca ancora |
-| Test | 🟢 | 74 test automatici, eseguiti a ogni modifica |
+| Test | 🟢 | 100 test automatici, eseguiti a ogni modifica |
 | Hardware reale | 🔴 | Non ancora: per questa versione non risulta alcuna esecuzione su hardware reale |
 | Documentazione | 🟢 | README in otto lingue, verificato rispetto al manifesto a ogni modifica |
 
-## 1. 🛠️ PANORAMICA TECNICA
+## 🎯 Panoramica
 
 **HYDRA-UMC-DOCS-QA** è un assistente specializzato Retrieval-Augmented Generation (RAG) progettato per tecnici e sviluppatori in loco. Fornisce risposte istantanee e documentate a domande tecniche sull'ecosistema HYDRA-UMC.
 
 Risponde solo dai documenti Markdown che gli vengono dati con `--docs`, in locale e senza connessione internet, e cita sempre il passaggio usato. Leggere tutti i manuali, la documentazione degli schemi e il codice sorgente dell'intero ecosistema per la risoluzione dei problemi, il pinout e la compilazione del firmware è l'obiettivo, previsto ma non ancora raggiunto.
 
-### Caratteristiche principali:
-* 🔍 **Ricerca vettoriale locale (v0):** Vero recupero lessicale TF-IDF, solo stdlib, su documenti Markdown locali. *(implementato come vera ricerca lessicale - non ancora ricerca semantica basata su embedding, e l'ingestione PDF resta lavoro futuro; vedi BUILD ED ESECUZIONE sotto)*
-* 🔒 **Vera lista consentiti dei documenti:** vengono ingeriti e citati solo i file `.md`/`.markdown` realmente esistenti - qualsiasi altro percorso `--docs` (mancante, o di un tipo di file non consentito) viene rifiutato con un motivo distinto e stampato, invece di essere ignorato silenziosamente o letto come se fosse documentazione reale. *(implementato)*
-* 🔗 **Citazioni tracciabili:** ogni risultato cita `source#index` - un puntatore stabile e univoco al passaggio esatto ingerito, recuperabile in modo deterministico rianalizzando la stessa fonte. *(implementato)*
-* 🎯 **Punteggio deterministico:** il ranking è una funzione pura del corpus e del testo della query, indipendente dal seed hash per processo dell'interprete. *(implementato)*
-* 🗄️ **Cache dell'indice che non può eseguire codice:** il `query` della CLI salva l'indice costruito nella directory di cache dell'utente (`HYDRA_UMC_DOCS_QA_CACHE_DIR`, altrimenti `XDG_CACHE_HOME`, altrimenti `~/.cache/hydra-umc-docs-qa`), con una chiave formata da percorso, dimensione e data di modifica di ogni documento. Ora è un JSON validato; prima era un `pickle`, che esegue qualunque codice porti il file, per cui qualsiasi altro processo dello stesso utente poteva depositarvi un file e farlo eseguire dal `query` successivo. Un file piazzato, troncato o di forma errata è semplicemente un cache miss. *(implementato)*
-* 🌐 **Vera API JSON/HTTP:** il sottocomando `serve` esegue esattamente la stessa ricerca TF-IDF come servizio locale di lunga durata (default `127.0.0.1:8110`) tramite `GET /query?q=...&top_k=N` e `GET /stats` - il corpus viene ingerito e indicizzato UNA sola volta all'avvio, non a ogni richiesta. Vedi [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) per esempi reali catturati. *(implementato)*
-* 📚 **Manifesto del corpus, BM25, "nessuna risposta", ricarica e citazioni verificabili:** `--corpus FILE` (JSON: `roots`, modelli `exclude` e `documents` fissati con SHA-256) sostituisce il libero `--docs`: si leggono solo le radici, un documento fissato i cui byte sono cambiati resta fuori, e con i fissati un nuovo file in una radice non è citabile finché qualcuno non lo fissa. Ogni sezione porta l'hash del suo file, così un risultato cita `fonte#sezione@sha256`. `--scorer bm25`, `--stem` (un rimuovitore di suffissi prudente) e `--heading-boost N` migliorano l'ordinamento sui testi brevi (i valori predefiniti sono ciò che l'indice è sempre stato). Il servizio può rifiutarsi di rispondere: `--min-score` e `--min-coverage` (la quota delle parole della domanda che contiene una sezione) fanno rispondere a `GET /query` `answerable: false` senza contesto, invece di una sezione che condivide solo una parola con la domanda (una richiesta può chiedere di più, mai di meno). `POST /reload` (token bearer richiesto; anche SIGHUP) ricostruisce l'indice dal disco senza riavviare e tiene il precedente se fallisce; `GET /stats` riporta il numero di frammenti, quando l'indice è stato costruito e l'ultimo errore di ricarica. *(provato su Markdown sintetico e reale; le soglie vanno regolate con domande vere)*
-* 🤖 **Ragionamento fondato:** Le risposte si basano rigorosamente sulla documentazione del progetto fornita.
-* 🎙️ **Integrazione vocale:** Integrato con VOICE-UI per il supporto alla manutenzione a mani libere.
-* 🛠️ **Consapevolezza del codice:** Può spiegare i moduli del firmware e le specifiche del protocollo CAN.
-* 👨‍👩‍👧 **Figlio del Cognitive AI Node:** Funziona come uno dei quattro
-  servizi fratelli sotto [HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE)
-  (insieme a VLA-Engine, Voice-UI e Semantic-Planner), condividendo
-  l'immagine HydraOS e i pesi dei modelli del proprio genitore invece di
-  mantenere copie proprie.
-* 📦 **Versionamento stile contachilometri:** La versione di `pyproject.toml` viene alzata solo dal comando `bump` esplicito (`python tools/hydra_project_tool.py bump`, che esegue `bump_version.py`) - compilare non la cambia mai.
+## 🧩 Ruolo in HYDRA-UMC
 
----
+**HYDRA-UMC-DOCS-QA** risponde a una domanda sull'ecosistema con i suoi stessi documenti: trova i passaggi più adatti e li cita con file e numero di blocco. Appartiene alla famiglia cognitiva Hailo-10, ma oggi è un semplice recupero lessicale (TF-IDF o BM25) senza modello linguistico, quindi ciò che restituisce è una citazione, mai una risposta generata.
 
-## 2. 🔄 FLUSSO DELLA PIPELINE RAG
+## 🏛️ Architettura
+
+<p align="center">
+  <img src="images/architecture.svg" alt="HYDRA-UMC-DOCS-QA architecture" width="100%">
+</p>
+
+<details>
+<summary>Versione testuale del diagramma (Mermaid)</summary>
 
 ```mermaid
 flowchart LR
@@ -83,9 +83,9 @@ flowchart LR
     LLM --> ANS["Risposta tecnica documentata"]
 ```
 
----
+</details>
 
-## 3. 🧱 ARCHITETTURA E DECISIONI DI PROGETTAZIONE
+**Perché è fatto così**
 
 Questo repository è un **figlio** della famiglia Cognitive AI Node - il
 suo genitore, [HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE),
@@ -155,52 +155,56 @@ tre fratelli (VLA-Engine, Voice-UI, Semantic-Planner):
   ogni citazione una chiave stabile che chi la usa può sfruttare per
   recuperare di nuovo, in modo deterministico, lo stesso passaggio.
 
----
+## ✨ Funzionalità
 
-## 📂 STRUTTURA DELLE CARTELLE
+* 🔍 **Ricerca vettoriale locale (v0):** Vero recupero lessicale TF-IDF, solo stdlib, su documenti Markdown locali. *(implementato come vera ricerca lessicale - non ancora ricerca semantica basata su embedding, e l'ingestione PDF resta lavoro futuro; vedi BUILD ED ESECUZIONE sotto)*
+* 🔒 **Vera lista consentiti dei documenti:** vengono ingeriti e citati solo i file `.md`/`.markdown` realmente esistenti - qualsiasi altro percorso `--docs` (mancante, o di un tipo di file non consentito) viene rifiutato con un motivo distinto e stampato, invece di essere ignorato silenziosamente o letto come se fosse documentazione reale. *(implementato)*
+* 🔗 **Citazioni tracciabili:** ogni risultato cita `source#index` - un puntatore stabile e univoco al passaggio esatto ingerito, recuperabile in modo deterministico rianalizzando la stessa fonte. *(implementato)*
+* 🎯 **Punteggio deterministico:** il ranking è una funzione pura del corpus e del testo della query, indipendente dal seed hash per processo dell'interprete. *(implementato)*
+* 🗄️ **Cache dell'indice che non può eseguire codice:** il `query` della CLI salva l'indice costruito nella directory di cache dell'utente (`HYDRA_UMC_DOCS_QA_CACHE_DIR`, altrimenti `XDG_CACHE_HOME`, altrimenti `~/.cache/hydra-umc-docs-qa`), con una chiave formata da percorso, dimensione e data di modifica di ogni documento. Ora è un JSON validato; prima era un `pickle`, che esegue qualunque codice porti il file, per cui qualsiasi altro processo dello stesso utente poteva depositarvi un file e farlo eseguire dal `query` successivo. Un file piazzato, troncato o di forma errata è semplicemente un cache miss. *(implementato)*
+* 🌐 **Vera API JSON/HTTP:** il sottocomando `serve` esegue esattamente la stessa ricerca TF-IDF come servizio locale di lunga durata (default `127.0.0.1:8110`) tramite `GET /query?q=...&top_k=N` e `GET /stats` - il corpus viene ingerito e indicizzato UNA sola volta all'avvio, non a ogni richiesta. Vedi [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) per esempi reali catturati. *(implementato)*
+* 📚 **Manifesto del corpus, BM25, "nessuna risposta", ricarica e citazioni verificabili:** `--corpus FILE` (JSON: `roots`, modelli `exclude` e `documents` fissati con SHA-256) sostituisce il libero `--docs`: si leggono solo le radici, un documento fissato i cui byte sono cambiati resta fuori, e con i fissati un nuovo file in una radice non è citabile finché qualcuno non lo fissa. Ogni sezione porta l'hash del suo file, così un risultato cita `fonte#sezione@sha256`. `--scorer bm25`, `--stem` (un rimuovitore di suffissi prudente) e `--heading-boost N` migliorano l'ordinamento sui testi brevi (i valori predefiniti sono ciò che l'indice è sempre stato). Il servizio può rifiutarsi di rispondere: `--min-score` e `--min-coverage` (la quota delle parole della domanda che contiene una sezione) fanno rispondere a `GET /query` `answerable: false` senza contesto, invece di una sezione che condivide solo una parola con la domanda (una richiesta può chiedere di più, mai di meno). `POST /reload` (token bearer richiesto; anche SIGHUP) ricostruisce l'indice dal disco senza riavviare e tiene il precedente se fallisce; `GET /stats` riporta il numero di frammenti, quando l'indice è stato costruito e l'ultimo errore di ricarica. *(provato su Markdown sintetico e reale; le soglie vanno regolate con domande vere)*
+* 🤖 **Ragionamento fondato:** Le risposte si basano rigorosamente sulla documentazione del progetto fornita.
+* 🎙️ **Integrazione vocale:** Integrato con VOICE-UI per il supporto alla manutenzione a mani libere.
+* 🛠️ **Consapevolezza del codice:** Può spiegare i moduli del firmware e le specifiche del protocollo CAN.
+* 👨‍👩‍👧 **Figlio del Cognitive AI Node:** Funziona come uno dei quattro
+  servizi fratelli sotto [HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE)
+  (insieme a VLA-Engine, Voice-UI e Semantic-Planner), condividendo
+  l'immagine HydraOS e i pesi dei modelli del proprio genitore invece di
+  mantenere copie proprie.
+* 📦 **Versionamento stile contachilometri:** La versione di `pyproject.toml` viene alzata solo dal comando `bump` esplicito (`python tools/hydra_project_tool.py bump`, che esegue `bump_version.py`) - compilare non la cambia mai.
 
-```text
-HYDRA-UMC-DOCS-QA/
-├── src/hydra_umc_docs_qa/
-│   ├── __init__.py          # Descrizione e versione del pacchetto
-│   ├── ingest.py            # Ingestione Markdown reale -> DocChunk per intestazione
-│   ├── index.py              # Indice TF-IDF reale (solo stdlib) + ricerca per similarità coseno
-│   ├── cache.py              # Cache su disco dell'indice costruito (JSON validato, mai pickle) per `query` ripetuti
-│   ├── corpus.py             # Corpus manifest: roots, exclusions, documents pinned by SHA-256
-│   ├── access.py             # Optional bearer token (needed for POST /reload and away from loopback)
-│   ├── api.py                  # Superficie JSON/HTTP semplice (http.server di stdlib) sulla vera logica `query`
-│   ├── main.py                # Punto di ingresso + sottocomandi reali `query`/`serve`
-│   └── highlight.py           # Evidenziazione in console dei termini trovati (semplici codici ANSI)
-├── tests/                   # Test reali: ingestione, lista consentiti, ranking, determinismo, api, CLI end-to-end
-├── docs/
-│   └── CLI_REFERENCE.md    # Riferimento completo CLI + API JSON/HTTP, ogni esempio catturato da un'esecuzione reale
-├── images/                  # Media e diagrammi
-├── systemd/
-│   └── hydra-umc-docs-qa.service # Unità systemd della API locale di query documenti sulla CM5
-├── tools/
-│   ├── build_test.py        # Controllo build senza versionamento
-│   ├── ci_validate.py       # Validazione manifest/CHANGELOG/docs usata dalla CI
-│   ├── _doc_policy.py       # Regole di documentazione condivise dalla famiglia (copia di quella di HYDRA-UMC-SDK, mantenuta sincronizzata)
-│   ├── _readme_parity.py    # Verifica che gli otto README abbiano la stessa struttura (copia di quella di HYDRA-UMC-SDK, mantenuta sincronizzata)
-│   └── hydra_project_tool.py # Gli stessi comandi in ogni repository: validate, test, ci, version, status, bump
-├── build/                   # Output di build locale (ignorato da git)
-├── pyproject.toml           # Metadati del pacchetto (versione a incremento contachilometri)
-├── bump_version.py          # Incremento di versione stile contachilometri (eseguito solo dal comando `bump` esplicito)
-├── bump_manifest_version.py # Sincronizza la versione di hydra-umc.project.json con quella nativa (--sync)
-├── build.sh / build.bat     # Crea il venv, installa (con extra dev), verifica l'import, esegue i test
-└── run.sh / run.bat         # Esegue il punto di ingresso (inoltra gli argomenti, es. `query`)
-```
+## 🔒 Sicurezza e protezione
 
-> **Nota:** `hardware/` e `firmware/` sono stati potati - questo nodo
-> funziona su un modulo CM5 + Hailo-10 M.2 già esistente, senza un
-> progetto hardware/firmware proprio. Sono stati potati anche `os/` e
-> `models/` - l'immagine HydraOS e i pesi dei modelli Hailo-10 condivisi
-> risiedono nel progetto padre `HYDRA-UMC-COGNITIVE-NODE`, a cui questo
-> progetto si collega come servizio (vedi il suo `docker-compose.yml`).
+| Minaccia | Difesa | Dove |
+|---|---|---|
+| Chiunque interroghi o ricarichi il corpus | Un token Bearer opzionale di almeno 16 caratteri (`--token-file` o `HYDRA_UMC_DOCS_QA_TOKEN`) protegge `GET /query` e `POST /reload`; il servizio ascolta su `127.0.0.1:8110` per impostazione predefinita | `access.py`, `main.py` |
+| Documenti enormi, alberi immensi, file ostili | Si leggono solo `.md` e `.markdown`, al massimo 4 MiB ciascuno, al massimo 5000 file espansi e 12 livelli di profondità; il manifesto del corpus è al massimo 256 KiB e può fissare ogni documento con il suo SHA-256; un percorso rifiutato viene segnalato, mai ignorato in silenzio | `ingest.py`, `corpus.py` |
+| Risultati assurdi e una cache avvelenata | `top_k` è al massimo 50; `--min-score` e `--min-coverage` (da 0 a 1) decidono quando una domanda conta come risposta; la cache dell'indice tiene al massimo 20 voci | `api.py`, `cache.py` |
 
----
+**Cosa non fa mai:** qui non gira alcun modello linguistico né Hailo-10: l'etichetta «Hailo-10» del ruolo indica l'hardware a cui è destinata questa famiglia.
 
-## ⚙️ BUILD ED ESECUZIONE
+## 🔌 Interfacce
+
+HTTP su `127.0.0.1:8110` per impostazione predefinita e una riga di comando. Il riferimento completo è `docs/CLI_REFERENCE.md`.
+
+| Topic o rotta | Cosa porta |
+|---|---|
+| `GET /query?q=...&top_k=N` | i passaggi migliori, ciascuno citato come `file#blocco` |
+| `GET /stats`, `POST /reload` | stato e dimensione dell'indice; ricaricare il corpus (richiede il token se impostato) |
+| `query QUESTION` | `--docs`, `--top-k 5`, `--scorer tfidf\|bm25` (BM25 k1 1,5, b 0,75), `--stem`, `--heading-boost 1..10`, `--corpus MANIFESTO` |
+| `serve` | `--docs ... --addr 127.0.0.1 --port 8110 [--token-file FILE] [--min-score 0.0] [--min-coverage 0.0]` |
+
+## ⚙️ Configurazione
+
+| Variabile | Predefinito | Cosa imposta |
+|---|---|---|
+| `HYDRA_UMC_DOCS_QA_TOKEN`, `--token-file` | nessun token | il token Bearer opzionale, almeno 16 caratteri |
+| `HYDRA_UMC_DOCS_QA_CACHE_DIR` | la cartella di cache della piattaforma | dove vive la cache dell'indice |
+| `--corpus MANIFEST` | il README e il CHANGELOG di questo repository | il manifesto del corpus: radici, esclusioni e documenti fissati con SHA-256 |
+| `--min-score`, `--min-coverage` | `0.0` | quando una domanda conta come risposta (da 0 a 1) |
+
+## 🚀 Avvio rapido
 
 Richiede Python >= 3.10.
 
@@ -256,7 +260,17 @@ Top 1 passage(s) for: "firmware flashing"
 
 La stessa ricerca è raggiungibile anche come API JSON/HTTP di lunga durata tramite `./run.sh serve --docs manual.md` (default `127.0.0.1:8110`). Vedi [`docs/CLI_REFERENCE.md`](docs/CLI_REFERENCE.md) per il riferimento completo di comandi ed endpoint, con ogni esempio catturato da un'esecuzione reale.
 
-### 🧪 Risoluzione dei problemi
+## 🧪 Test
+
+100 test automatici si eseguono con `python -m pytest -q tests`. Coprono l'acquisizione, l'indice TF-IDF e BM25, il determinismo, la cache, il manifesto del corpus, input ostili, la riga di comando e l'interfaccia HTTP; né hardware né rete esterna.
+
+La CI esegue `HYDRA_UMC_CI=1 python tools/ci_validate.py`, che controlla il manifesto, i documenti, gli otto README e le immagini.
+
+## 🏗️ Compilazione e rilascio
+
+Per un rilascio non c'è nulla da compilare: `build.sh` / `build.bat` creano l'ambiente virtuale, installano il pacchetto in modalità modificabile ed eseguono i test, e `build-test` si limita a controllare. Compilare non cambia mai la versione; la alza soltanto `python tools/hydra_project_tool.py bump`, che sposta anche il registro delle modifiche. La versione del pacchetto, del manifesto e del registro deve coincidere, altrimenti `ci_validate.py` fallisce.
+
+## 🩺 Risoluzione dei problemi
 
 * **`python: command not found` / la build fallisce al passaggio 1.** È
   richiesto Python >= 3.10 nel `PATH`. Su Windows installarlo da
@@ -273,17 +287,58 @@ La stessa ricerca è raggiungibile anche come API JSON/HTTP di lunga durata tram
   `python -c "import hydra_umc_docs_qa"` è già fallito; rieseguire con il
   virtual environment attivo per visualizzare il traceback reale.
 
----
+## 📂 Struttura del repository
 
-## 🚀 TABELLA DI MARCIA
+<p align="center">
+  <img src="images/repository-structure.svg" alt="Repository structure of HYDRA-UMC-DOCS-QA" width="100%">
+</p>
+
+<details>
+<summary>Versione testuale dell'albero</summary>
+
+```text
+HYDRA-UMC-DOCS-QA/
+├── src/hydra_umc_docs_qa/
+│   ├── ingest.py                                divide il Markdown in blocchi per intestazione
+│   ├── index.py                                 recupero TF-IDF e BM25
+│   ├── corpus.py                                da quali documenti si può rispondere
+│   ├── cache.py                                 cache dell'indice su disco
+│   ├── api.py access.py                         interfaccia HTTP e token opzionale
+│   └── main.py highlight.py                     riga di comando ed evidenziazione
+├── tests/                                       100 test
+├── docs/                                        il riferimento della riga di comando
+├── systemd/                                     unità di servizio per la CM5
+├── tools/                                       esecutore di build e test, aumento di versione, validatore CI, generatori e controlli di README e immagini
+├── images/                                      banner e immagini del README
+├── .github/                                     workflow CI e modelli di segnalazione
+├── pyproject.toml                               metadati del pacchetto e dipendenze
+├── hydra-umc.project.json                       manifesto: versione, maturità, famiglia
+├── CHANGELOG.md                                 cosa è cambiato in ogni versione
+├── build.sh build.bat                           script di build (non cambiano mai la versione)
+├── build-test.sh build-test.bat                 script di build (non cambiano mai la versione)
+├── test.sh test.bat                             eseguono i test
+├── Dockerfile                                   immagine di container
+├── bump_version.py / bump_manifest_version.py   aumento di versione esplicito
+├── run.sh run.bat                               avviare il servizio
+└── SECURITY.md SUPPORT.md CONTRIBUTING.md CODE_OF_CONDUCT.md LICENSE LICENSE.md
+```
+
+</details>
+
+## 🗺️ Roadmap e limiti noti
+
+**Limiti noti oggi**
+
 * **Fase 1:** Distribuzione del motore VLA e elaborazione dell'input multi-modale su Hailo-10.
 * **Fase 2:** Integrazione del pianificatore semantico con modelli comportamentali di sciame e memoria a lungo termine.
 * **Fase 3:** Esecuzione locale a bassa latenza dell'interfaccia vocale e cancellazione del rumore industriale.
 * **Fase 4:** Visualizzazione interattiva degli schemi collegata alle risposte QA e ottimizzazione RAG per dispositivi edge.
 
----
+## 🌍 Lingue
 
-## 🔗 Progetti Correlati
+Questo README e i documenti del repository esistono in otto lingue: inglese, spagnolo, tedesco, francese, italiano, giapponese, cinese e portoghese (Portogallo). Sono scritti insieme e la CI verifica che gli otto file abbiano le stesse sezioni e gli stessi link. Questo repository non ha uno schermo né un catalogo di messaggi propri, quindi non ci sono stringhe di interfaccia da tradurre.
+
+## 🔗 Progetti correlati
 
 Questo progetto fa parte dell'ecosistema robotico HYDRA-UMC dello stesso autore (JuanenRac / Electro Hobby 3D). Vale la pena conoscerlo, poiché una richiesta potrebbe in realtà riguardare uno di questi invece di questo repository.
 
@@ -372,20 +427,27 @@ Questo progetto fa parte dell'ecosistema robotico HYDRA-UMC dello stesso autore 
 - **[HYDRA-UMC-OPS-AGENT](https://github.com/JuanenRac/HYDRA-UMC-OPS-AGENT)** — coordinatore di incidenti di manutenzione: un ruolo edge a basso privilegio raccoglie uno snapshot di inventario/salute sanificato, un ruolo control-plane lo rende in sola lettura e chiede a un provider di IA di suggerire una diagnosi - non applica mai una patch né distribuisce nulla.
 - **[HYDRA-UMC-DEV-SERVER](https://github.com/JuanenRac/HYDRA-UMC-DEV-SERVER)** — host di sviluppo riproducibile (Raspberry Pi 5 / CM5) che conserva il codice sorgente dell'ecosistema ed esegue attività delimitate di build/test tramite una coda durevole; un ruolo di sviluppo dedicato, esplicitamente distinto da un CM5 operativo.
 
----
+## 📚 Documentazione
 
-## 📚 Documentazione e Comunità
+Dove leggere di più:
 
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** — stack tecnologico e linee guida di codifica per una pull request.
-- **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)** — gli standard di comportamento attesi in questa comunità.
-- **[SECURITY.md](SECURITY.md)** — come segnalare una vulnerabilità, e le reali aree di attenzione sulla sicurezza di questo progetto.
-- **[SUPPORT.md](SUPPORT.md)** — dove porre domande e segnalare bug.
-- **[LICENSE.md](LICENSE.md)** — la licenza propria di questo progetto.
+* [docs/CLI_REFERENCE.md](docs/CLI_REFERENCE.md) - ogni comando ed endpoint, con output catturato da un'esecuzione reale
+* [Base di sicurezza dell'ecosistema](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/SECURITY_BASELINE.md)
+* [Modello delle minacce dell'ecosistema](https://github.com/JuanenRac/HYDRA-UMC-DOCS/blob/main/docs/THREAT_MODEL.md)
+* [Registro delle modifiche di questo repository](CHANGELOG.md)
+* [Licenza di questo repository](LICENSE.md)
+
+## 🤝 Contribuire e comunità
+
+* Prima di una pull request esegui `HYDRA_UMC_CI=1 py -3 tools/ci_validate.py` (oppure `HYDRA_UMC_CI=1 python3 tools/ci_validate.py`): deve stampare `CI_VALIDATION=PASS`. Non eseguire `build.sh` né `build.bat` per questa verifica; compilare non è verificare.
+* I otto README sono scritti da un'unica fonte in HYDRA-UMC-DOCS; non modificarli a mano. Cambia la fonte e riscrivili con `tools/make_readmes.py`.
+* Non affermare in un README ciò che non è stato eseguito: scrivi «simulato» o «non provato su hardware» quando è la verità.
+* Vedi [CONTRIBUTING.md](CONTRIBUTING.md), il [codice di condotta](CODE_OF_CONDUCT.md), [SECURITY.md](SECURITY.md) e [SUPPORT.md](SUPPORT.md).
 
 ## 👤 AUTORE
-**JuanenRac** (Electro Hobby 3D)
-📧 electrohobby3d@gmail.com
-📺 [youtube.com/@electrohobby3d](https://youtube.com/@electrohobby3d)
+
+**JuanenRac (Electro Hobby 3D)** · electrohobby3d@gmail.com
 
 ## 📜 LICENZA
-GPL-3.0-or-later - Vedere LICENSE per i dettagli.
+
+GPL-3.0-or-later - [LICENSE](LICENSE).
