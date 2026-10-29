@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+- **The layout of the README is checked in the CI:** the validator runs `tools/universal_readme_check.py` and lists, as a warning, what differs from the universal layout of the README.
+
 ## [0.1.5] - The READMEs no longer say the assistant has "read" the whole ecosystem
 
 - **A corpus manifest, BM25, a threshold for "no answer", reload and citations that can be checked.** `corpus.py` / `--corpus FILE`: only the `roots` are read, `exclude` patterns leave files out, `documents` are pinned by SHA-256 (a changed pinned file is not ingested; with pins, a new file in a root is not quotable until pinned unless `strict` is false). Every section carries the SHA-256 of its file and a result cites `source#index@sha256` (the cache format is now 3). `--scorer bm25`, `--stem` and `--heading-boost N` (defaults unchanged; the disk cache only serves the default index). `--min-score` / `--min-coverage` make `GET /query` answer `answerable: false` with no results when the best section is below them (a request may only raise them); each result has a `coverage`. `POST /reload` (bearer token required, 403 without one) and SIGHUP rebuild the index from the disk and keep the old one if that fails; `GET /stats` reports `chunks`, `builtAtMs`, the scorer and the last reload error. Optional token for `GET /query` (`--token-file`, mandatory away from loopback). The thresholds still need tuning with real questions.
