@@ -24,6 +24,7 @@ from urllib.parse import parse_qs, urlparse
 
 from .access import authorized, reject
 from .corpus import CorpusManifest, collect
+from .extract import best_sentence
 from .index import TfidfIndex, answerable, build_index, search
 from .ingest import RejectedDocument, ingest_allowed_markdown_files
 
@@ -183,6 +184,10 @@ class Handler(BaseHTTPRequestHandler):
             _write_json(self, 200, {"question": params["q"], "answerable": False, "reason": reason, "results": []})
             return
         payload = [{**asdict(r), "citation": r.chunk.citation} for r in results]
+        if params.get("extractive") in ("1", "true"):
+            # the sentence of each passage that best answers the question (a piece of the passage, nothing generated)
+            for item, r in zip(payload, results):
+                item["answer"] = best_sentence(r.chunk.text, params["q"])
         _write_json(self, 200, {"question": params["q"], "answerable": ok, "reason": reason, "results": payload})
 
 

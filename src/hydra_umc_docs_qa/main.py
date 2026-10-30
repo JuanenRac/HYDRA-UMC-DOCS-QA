@@ -23,6 +23,7 @@ from .access import bind_problem, load_token
 from .api import DocsQaServer, build_corpus_index, build_server_index
 from .corpus import CorpusError, collect, load_manifest
 from .cache import compute_cache_key, load_cached_index, save_cached_index
+from .extract import best_sentence
 from .highlight import highlight_terms
 from .ingest import RejectedDocument, RejectionReason, ingest_markdown_file, partition_allowed_paths
 from .index import build_index, search
@@ -56,6 +57,7 @@ def _run_query(
     scorer: str = "tfidf",
     stem: bool = False,
     heading_boost: int = 1,
+    extractive: bool = False,
 ) -> int:
     if corpus is not None:
         # the documents come from the manifest (roots, exclusions, pins); the disk cache is for the plain --docs index only
@@ -117,7 +119,9 @@ def _run_query(
     for rank, result in enumerate(results, start=1):
         heading = result.chunk.heading or "(document start)"
         snippet = result.chunk.text.replace("\n", " ").strip()
-        if len(snippet) > _SNIPPET_LEN:
+        if extractive:
+            snippet = best_sentence(result.chunk.text, question, max_len=_SNIPPET_LEN * 2)
+        elif len(snippet) > _SNIPPET_LEN:
             snippet = snippet[:_SNIPPET_LEN].rstrip() + "..."
         snippet = highlight_terms(snippet, question)
         cited = f"{result.chunk.source}#{result.chunk.index}" + (f"@{result.chunk.sha256[:12]}" if result.chunk.sha256 else "")
@@ -223,6 +227,10 @@ def build_parser() -> argparse.ArgumentParser:
     query_parser.add_argument(
         "--top-k", type=int, default=5, help="Maximum number of passages to print (default: 5)."
     )
+    query_parser.add_argument(
+        "--extractive", action="store_true",
+        help="Print the sentence of each passage that best answers the question instead of the first characters of the passage.",
+    )
     _add_retrieval_options(query_parser)
 
     serve_parser = subparsers.add_parser(
@@ -274,7 +282,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "query":
         docs = args.docs if args.docs is not None else list(_DEFAULT_DOCS)
         try:
-            return _run_query(args.question, docs, args.top_k, corpus=args.corpus, scorer=args.scorer, stem=args.stem, heading_boost=args.heading_boost)
+            return _run_query(args.question, docs, args.top_k, corpus=args.corpus, scorer=args.scorer, stem=args.stem, heading_boost=args.heading_boost, extractive=args.extractive)
         except ValueError as exc:
             print(f"ERROR: {exc}")
             return 2

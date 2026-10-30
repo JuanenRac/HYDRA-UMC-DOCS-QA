@@ -147,6 +147,8 @@ $ curl -s "http://127.0.0.1:8110/query?q=firmware+flashing"
 {"question": "firmware flashing", "results": [{"chunk": {"source": "manual.md", "heading": "Firmware Flashing", "text": "Flash URTC firmware over SWD or JTAG using URTC-FLASHER.", "index": 0}, "score": 0.28867513459481287}]}
 ```
 
+**The sentence that answers.** A passage can be long and the sentence that matters is often not the first one. `query --extractive` prints, for each passage, the sentence that holds the most words of the question (the same word matching as the retrieval; the earliest wins a tie, and a passage with no word in common gives back its start) instead of its first 160 characters. `GET /query?q=...&extractive=1` adds the same sentence as an `answer` field to each result. Nothing is generated: the text is always a piece of the passage, and `citation` still names where it comes from.
+
 `GET /stats` — which documents this server instance actually indexed at
 startup, and which were rejected (file names only, never absolute paths; a
 symbolic link is rejected, and `top_k` is capped at 50):

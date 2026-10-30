@@ -18,7 +18,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Method-RAG%20%2F%20Vector%20Search-orange.svg" alt="Method">
   <img src="https://img.shields.io/badge/Platform-Hailo--10-green.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-100%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-109%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.5-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -35,7 +35,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | 版本 | `0.1.5` |
 | 成熟度 | 可用 |
-| 测试 | 100 (`python -m pytest -q tests`) |
+| 测试 | 109 (`python -m pytest -q tests`) |
 | 技术栈 | Python / TF-IDF lexical retrieval |
 | 目标 | HYDRA-UMC 工作单元的 Raspberry Pi CM5 |
 | 真实硬件 | 尚未：此版本没有在真实硬件上运行的记录 |
@@ -51,7 +51,7 @@ GPL-3.0-or-later - see LICENSE
 | 领域 | 状态 | 在这里的含义 |
 |---|---|---|
 | 软件 | 🟡 | 主要用途可用；上面的诚实性检查列出了仍然缺少的内容 |
-| 测试 | 🟢 | 100 项自动测试，每次变更都会运行 |
+| 测试 | 🟢 | 109 项自动测试，每次变更都会运行 |
 | 真实硬件 | 🔴 | 尚未：此版本没有在真实硬件上运行的记录 |
 | 文档 | 🟢 | 八种语言的 README，每次变更都会与清单核对 |
 
@@ -201,7 +201,7 @@ Top 1 passage(s) for: "firmware flashing"
 
 ## 🧪 测试
 
-运行 `python -m pytest -q tests` 会执行 100 个自动测试，覆盖导入、TF-IDF 与 BM25 索引、确定性、缓存、语料清单、恶意输入、命令行和 HTTP 接口；不需要硬件和外部网络。
+运行 `python -m pytest -q tests` 会执行 109 个自动测试，覆盖导入、TF-IDF 与 BM25 索引、确定性、缓存、语料清单、恶意输入、命令行和 HTTP 接口；不需要硬件和外部网络。
 
 CI 运行 `HYDRA_UMC_CI=1 python tools/ci_validate.py`，检查清单、文档、八个 README 和图片。
 
