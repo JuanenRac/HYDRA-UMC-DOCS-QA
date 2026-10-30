@@ -173,6 +173,7 @@ frères (VLA-Engine, Voice-UI, Semantic-Planner) :
   l'image HydraOS et les poids de modèles de son parent au lieu de
   conserver ses propres copies.
 * 📦 **Versionnage compteur kilométrique :** La version de `pyproject.toml` n'est augmentée que par la commande `bump` explicite (`python tools/hydra_project_tool.py bump`, qui exécute `bump_version.py`) - compiler ne la change jamais.
+* ✂️ **Réponses extractives (facultatif) :** `query --extractive` et `GET /query?...&extractive=1` renvoient, pour chaque passage, la phrase qui contient le plus de mots de la question (un morceau du passage, jamais du texte généré) au lieu des premiers caractères du passage.
 
 ## 🔒 Sécurité et protection
 

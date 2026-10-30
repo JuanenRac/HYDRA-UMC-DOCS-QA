@@ -118,6 +118,7 @@ flowchart LR
 * 👨‍👩‍👧 **认知 AI 节点子项目：** 作为
   [HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE) 下 4 个同级服务之一运行（与 VLA-Engine、Voice-UI 和 Semantic-Planner 并列），共享父项目的 HydraOS 镜像和模型权重，而非各自保留独立副本。
 * 📦 **显式的版本提升：** `pyproject.toml` 中的版本只由显式的 `bump` 命令提升（`python tools/hydra_project_tool.py bump`，它会运行 `bump_version.py`）- 构建绝不会更改它。
+* ✂️ **摘录式回答(可选):** `query --extractive` 和 `GET /query?...&extractive=1` 对每个段落返回包含问题中词语最多的那句话(是段落的一部分，绝不是生成的文字)，而不是段落开头的若干字符。
 
 ## 🔒 安全与防护
 

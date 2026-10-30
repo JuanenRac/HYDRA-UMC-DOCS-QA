@@ -116,6 +116,7 @@ Este repositório é um **filho** da família Cognitive AI Node - o seu pai, o [
   (ao lado do VLA-Engine, Voice-UI e Semantic-Planner), partilhando a imagem
   HydraOS e os pesos de modelo do pai em vez de manter cópias próprias.
 * 📦 **Subida de versão explícita:** A versão do `pyproject.toml` só é subida pelo comando `bump` explícito (`python tools/hydra_project_tool.py bump`, que executa o `bump_version.py`) - compilar nunca a altera.
+* ✂️ **Respostas extrativas (opcional):** `query --extractive` e `GET /query?...&extractive=1` devolvem, para cada passagem, a frase que contém mais palavras da pergunta (um pedaço da passagem, nunca texto gerado) em vez dos primeiros caracteres da passagem.
 
 ## 🔒 Segurança e proteção
 

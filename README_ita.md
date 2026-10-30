@@ -173,6 +173,7 @@ tre fratelli (VLA-Engine, Voice-UI, Semantic-Planner):
   l'immagine HydraOS e i pesi dei modelli del proprio genitore invece di
   mantenere copie proprie.
 * 📦 **Versionamento stile contachilometri:** La versione di `pyproject.toml` viene alzata solo dal comando `bump` esplicito (`python tools/hydra_project_tool.py bump`, che esegue `bump_version.py`) - compilare non la cambia mai.
+* ✂️ **Risposte estrattive (facoltativo):** `query --extractive` e `GET /query?...&extractive=1` restituiscono, per ogni passaggio, la frase che contiene più parole della domanda (un pezzo del passaggio, mai testo generato) invece dei primi caratteri del passaggio.
 
 ## 🔒 Sicurezza e protezione
 

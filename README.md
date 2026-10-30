@@ -167,6 +167,7 @@ service into `docker-compose.yml` alongside its three siblings
   parent's HydraOS image and model weights instead of keeping its own
   copies.
 * 📦 **Explicit version bump:** The version in `pyproject.toml` is raised only by the explicit bump command (`python tools/hydra_project_tool.py bump`, which runs `bump_version.py`) - building never changes it.
+* ✂️ **Extractive answers (optional):** `query --extractive` and `GET /query?...&extractive=1` return, for each passage, the sentence that holds the most words of the question (a piece of the passage, never generated text) instead of the first characters of the passage.
 
 ## 🔒 Security & Safety
 

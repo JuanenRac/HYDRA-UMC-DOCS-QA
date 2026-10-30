@@ -119,6 +119,7 @@ flowchart LR
 * 👨‍👩‍👧 **認知 AI ノードの子プロジェクト：**
   [HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE) の下で 4 つの兄弟サービスの 1 つとして動作します（VLA-Engine、Voice-UI、Semantic-Planner と並んで）。独自のコピーを保持するのではなく、親プロジェクトの HydraOS イメージとモデルの重みを共有します。
 * 📦 **明示的なバージョン引き上げ：** `pyproject.toml` のバージョンを上げるのは明示的な `bump` コマンド（`python tools/hydra_project_tool.py bump`、内部で `bump_version.py` を実行）だけです - ビルドがバージョンを変更することはありません。
+* ✂️ **抜粋型の回答(任意):** `query --extractive` と `GET /query?...&extractive=1` は、各箇所について、先頭の文字ではなく、質問の語を最も多く含む文(その箇所の一部であり、生成された文章ではありません)を返します。
 
 ## 🔒 セキュリティと安全
 

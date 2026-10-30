@@ -177,6 +177,7 @@ Voice-UI, Semantic-Planner) ein:
   HydraOS-Image und die Modellgewichte des eigenen Elternprojekts,
   anstatt eigene Kopien zu pflegen.
 * 📦 **Ausdrückliche Versionserhöhung:** Die Version in `pyproject.toml` wird nur vom expliziten `bump`-Befehl erhöht (`python tools/hydra_project_tool.py bump`, der `bump_version.py` ausführt) - Bauen ändert sie nie.
+* ✂️ **Extraktive Antworten (optional):** `query --extractive` und `GET /query?...&extractive=1` liefern je Textstelle den Satz mit den meisten Wörtern der Frage (ein Stück der Textstelle, nie erzeugter Text) statt der ersten Zeichen der Textstelle.
 
 ## 🔒 Sicherheit und Schutz
 
