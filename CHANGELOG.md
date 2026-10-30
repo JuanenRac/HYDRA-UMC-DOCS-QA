@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.1.6] - Extractive answers and the universal README
+
 - **Extractive answers:** `query --extractive` and `GET /query?...&extractive=1` return, for each passage, the sentence that holds the most words of the question (a piece of the passage, never generated text) instead of the first characters of the passage.
 - **README in the universal layout:** the README and its seven translations follow the layout that the four families share (22 sections in a fixed order), with an architecture picture and a repository-structure picture drawn from `docs/architecture.json` and `docs/structure.json`; the CI validator checks both pictures and the file tree. Where the repository has a service or an MQTT transport, the README now says how to start it and which environment variables it reads.
 
