@@ -159,7 +159,7 @@ def _run_serve(
                 # the manifest is read again on every reload: a root or a pin that was edited takes effect
                 return build_corpus_index(load_manifest(corpus), **options)
 
-            build_corpus_index(manifest, **options)  # fails here, before the port is bound, if the options are unusable
+            build_corpus_index(manifest, **options)  # type: ignore[arg-type]  # fails here, before the port is bound, if the options are unusable
         else:
             def loader():
                 return build_server_index(docs, **options)

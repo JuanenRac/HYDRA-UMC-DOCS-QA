@@ -25,3 +25,9 @@ hydra-umc-docs-qa = "hydra_umc_docs_qa.main:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff.lint]
+select = ["F", "E9", "B"]
+
+[tool.mypy]
+ignore_missing_imports = true

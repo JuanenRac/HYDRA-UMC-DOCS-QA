@@ -64,7 +64,7 @@ def _finish(
 def _write_json(handler: BaseHTTPRequestHandler, status: int, payload: object) -> None:
     def default(o: object) -> object:
         if hasattr(o, "__dataclass_fields__"):
-            return asdict(o)
+            return asdict(o)  # type: ignore[call-overload]
         return str(o)
     body = json.dumps(payload, default=default).encode("utf-8")
     handler.send_response(status)
@@ -186,7 +186,7 @@ class Handler(BaseHTTPRequestHandler):
         payload = [{**asdict(r), "citation": r.chunk.citation} for r in results]
         if params.get("extractive") in ("1", "true"):
             # the sentence of each passage that best answers the question (a piece of the passage, nothing generated)
-            for item, r in zip(payload, results):
+            for item, r in zip(payload, results, strict=False):
                 item["answer"] = best_sentence(r.chunk.text, params["q"])
         _write_json(self, 200, {"question": params["q"], "answerable": ok, "reason": reason, "results": payload})
 
