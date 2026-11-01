@@ -22,6 +22,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
+from . import __version__
+from .service_metrics import MetricsHandlerMixin
 from .access import authorized, reject
 from .corpus import CorpusManifest, collect
 from .extract import best_sentence
@@ -87,8 +89,10 @@ def _query_params(handler: BaseHTTPRequestHandler) -> dict[str, str]:
 MAX_TOP_K = 50
 
 
-class Handler(BaseHTTPRequestHandler):
+class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
     server: "DocsQaServer"
+    metrics_service = "hydra-umc-docs-qa"
+    metrics_version = __version__
 
     # Seconds a client may stay silent on its connection before the server
     # drops it, so a client that connects and sends nothing cannot hold a
@@ -99,6 +103,8 @@ class Handler(BaseHTTPRequestHandler):
         pass  # quiet by default, same reasoning as this family's other api.py files
 
     def do_GET(self) -> None:  # noqa: N802
+        if self.serve_metrics(authorized=authorized(self, self.server.token)):
+            return
         path = urlparse(self.path).path
         if path == "/query":
             if not authorized(self, self.server.token):

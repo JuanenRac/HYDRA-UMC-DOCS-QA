@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **`GET /metrics` in the text format of Prometheus:** the version, the uptime, the responses by class of status (2xx to 5xx) and the health, the aggregate of the checks of the service; only numbers about the service, never a path, an address, a token or a body. Behind the bearer token when the service has one. The code is the canonical `service_metrics.py` of HYDRA-UMC-SDK, copied byte for byte. 4 tests against a real server.
+
 ## [0.1.6] - Extractive answers and the universal README
 
 - **Extractive answers:** `query --extractive` and `GET /query?...&extractive=1` return, for each passage, the sentence that holds the most words of the question (a piece of the passage, never generated text) instead of the first characters of the passage.
