@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 import signal
 import sys
+from typing import Any
 from pathlib import Path
 
 from . import __version__
@@ -157,6 +158,7 @@ def _run_serve(
         if not (0.0 <= min_coverage <= 1.0) or min_score < 0.0:
             raise ValueError("--min-score must be 0 or more and --min-coverage between 0 and 1")
         options = {"scorer": scorer, "stem": stem, "heading_boost": heading_boost}
+        loader: Any
         if bundle is not None:
             loader = BundleLoader(bundle, read_key(bundle_key_file) if bundle_key_file else None, allow_unsigned_bundle)
         elif corpus is not None:
