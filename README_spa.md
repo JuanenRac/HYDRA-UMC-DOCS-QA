@@ -18,7 +18,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Method-RAG%20%2F%20Vector%20Search-orange.svg" alt="Method">
   <img src="https://img.shields.io/badge/Platform-Hailo--10-green.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-109%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-127%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.6-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -35,7 +35,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Versión | `0.1.6` |
 | Madurez | Funcional |
-| Tests | 109 (`python -m pytest -q tests`) |
+| Tests | 127 (`python -m pytest -q tests`) |
 | Tecnología | Python / TF-IDF lexical retrieval |
 | Destino | La Raspberry Pi CM5 de una celda HYDRA-UMC |
 | En hardware real | No aplica: nada de esto se ejecuta en hardware |
@@ -51,7 +51,7 @@ Cada línea es una parte de este repositorio y la luz dice hasta dónde llega ho
 | Área | Estado | Qué significa aquí |
 |---|---|---|
 | Software | 🟡 | Funciona para su propósito principal; la comprobación de honestidad de arriba lista lo que aún falta |
-| Pruebas | 🟢 | 109 pruebas automáticas, ejecutadas en cada cambio |
+| Pruebas | 🟢 | 127 pruebas automáticas, ejecutadas en cada cambio |
 | Hardware real | 🟢 | No aplica: nada de esto se ejecuta en hardware |
 | Interfaz y protocolos | 🟡 | Las rutas o los mensajes que ofrece están documentados y probados con un cliente; aún no los han usado todos los clientes |
 | Integración | 🟡 | Funciona junto con los demás servicios en el banco de pruebas de la CM5 y sus mensajes siguen los contratos compartidos del SDK |
@@ -178,6 +178,8 @@ hermanos (VLA-Engine, Voice-UI, Semantic-Planner):
   copias propias.
 * 📦 **Versionado Cuentakilómetros:** La versión de `pyproject.toml` solo la sube el comando `bump` explícito (`python tools/hydra_project_tool.py bump`, que ejecuta `bump_version.py`) - compilar nunca la cambia.
 * ✂️ **Respuestas extractivas (opcional):** `query --extractive` y `GET /query?...&extractive=1` devuelven, para cada pasaje, la frase que contiene más palabras de la pregunta (un trozo del pasaje, nunca texto generado) en lugar de los primeros caracteres del pasaje.
+* 🔢 **Catálogo de códigos de error:** `catalog` lee los códigos de estado y de fallo del bootloader del controlador y los perfiles de herramienta de URTC (solo lectura) y los escribe como documentos, una sección por código o herramienta; `GET /error?code=0x05` (o por nombre) responde con exactitud, con la cita `fuente#sección@sha256`, y lo dice cuando el código no está documentado. El significado de cada código del controlador está escrito en el catálogo, nunca inventado.
+* 📦 **Corpus por versión:** `bundle --release X` construye el índice una vez y lo escribe como fichero con el hash de cada documento, opcionalmente firmado (HMAC-SHA256 con un fichero de clave); `serve --bundle` lo carga y lo rechaza si el contenido o la firma no coinciden (uno sin firmar solo con el explícito `--allow-unsigned-bundle`). `GET /stats` muestra la versión. Construirlo en la CI y entregarlo con la imagen sigue pendiente de conectar.
 
 ## 🔒 Seguridad y protección
 
@@ -266,7 +268,7 @@ La misma búsqueda también se puede usar como una API JSON/HTTP de larga duraci
 
 ## 🧪 Pruebas
 
-109 pruebas automáticas se ejecutan con `python -m pytest -q tests`. Cubren la ingesta, el índice TF-IDF y BM25, el determinismo, la caché, el manifiesto del corpus, entradas hostiles, la línea de órdenes y la interfaz HTTP; sin hardware ni red externa.
+127 pruebas automáticas se ejecutan con `python -m pytest -q tests`. Cubren la ingesta, el índice TF-IDF y BM25, el determinismo, la caché, el manifiesto del corpus, entradas hostiles, la línea de órdenes y la interfaz HTTP; sin hardware ni red externa.
 
 El CI ejecuta `HYDRA_UMC_CI=1 python tools/ci_validate.py`, que comprueba el manifiesto, los documentos, los ocho README y las imágenes.
 

@@ -8,13 +8,13 @@ captured from a real run of the installed CLI — not written from memory.
 
 ```
 $ hydra-umc-docs-qa -h
-usage: hydra-umc-docs-qa [-h] {query,serve} ...
+usage: hydra-umc-docs-qa [-h] {query,serve,catalog,bundle} ...
 
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the
 ecosystem's own documentation.
 
 positional arguments:
-  {query,serve}
+  {query,serve,catalog,bundle}
     query        Real TF-IDF lexical search over ingested Markdown docs.
     serve        Run 'query' as a JSON/HTTP API (GET /query?q=...&top_k=N) -
                  unlike the CLI, which re-ingests and re-indexes the corpus
@@ -188,6 +188,28 @@ Any other path is a real `404`:
 $ curl -s -w '\nHTTP:%{http_code}\n' http://127.0.0.1:8110/nope
 {"error": "not found"}
 HTTP:404
+```
+
+### `catalog --mcu-protocol FILE [--urtc-tools FILE] --out DIR`
+
+Writes the error codes of the controller and the tool profiles of URTC as Markdown documents, one section per code or tool, so that the normal ingestion indexes them and an answer can cite `source#section@sha256`. `--mcu-protocol` is the `protocol.py` of the controller bridge (its `STATUS_*` and `VERIFY_FAIL_REASON_*` codes become `mcu-error-codes.md`); `--urtc-tools` is the `spec/tools.json` of URTC (`urtc-tool-profiles.md`). Both files are only read. The meaning of each controller code is written in the catalog; a code that the source defines and the catalog does not know is listed with a line saying that no description was written for it.
+
+```
+$ hydra-umc-docs-qa catalog --mcu-protocol protocol.py --urtc-tools tools.json --out corpus/
+wrote corpus/mcu-error-codes.md
+wrote corpus/urtc-tool-profiles.md
+```
+
+Once those documents are in the corpus, `GET /error?code=0x05` (a number) or `GET /error?code=STATUS_VERIFY_FAIL` (a name) of `serve` returns every section that defines the code, with its kind, text and citation: `{"code": "0x05", "found": true, "matches": [...]}`. A code that no section defines gives `"found": false` and an empty list, never a guess.
+
+### `bundle --release X --out FILE [--key-file FILE] [--docs ... | --corpus MANIFEST]`
+
+Builds the index once and writes it as one file for a release: the release name, the source and SHA-256 of every document, how the index was built, the index, a digest of all that and, with `--key-file`, an HMAC-SHA256 signature of the digest. The same documents and release give the same file. `serve --bundle FILE` loads it instead of indexing documents on the machine; `--bundle-key-file` names the key the signature is checked with. A bundle whose digest or signature does not match is refused, and so is one that is unsigned or whose signature cannot be checked, unless `--allow-unsigned-bundle` says so (off by default). `GET /stats` shows `release` and `bundleSigned`; `POST /reload` and `SIGHUP` read the file again.
+
+```
+$ hydra-umc-docs-qa bundle --release 0.3.0 --docs corpus/ --key-file key.txt --out corpus-0.3.0.json
+wrote corpus-0.3.0.json: release 0.3.0, 2 document(s), 21 section(s), signed, digest 5d0f...
+$ hydra-umc-docs-qa serve --bundle corpus-0.3.0.json --bundle-key-file key.txt
 ```
 
 ## Exit codes

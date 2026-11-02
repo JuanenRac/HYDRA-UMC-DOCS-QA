@@ -25,6 +25,8 @@ from urllib.parse import parse_qs, urlparse
 from . import __version__
 from .service_metrics import MetricsHandlerMixin
 from .access import authorized, reject
+from .bundle import load_bundle
+from .catalog import lookup_code
 from .corpus import CorpusManifest, collect
 from .extract import best_sentence
 from .index import TfidfIndex, answerable, build_index, search
@@ -50,6 +52,20 @@ def build_corpus_index(
     paths, refused = collect(manifest)
     chunks, rejected = ingest_allowed_markdown_files(paths)
     return _finish(chunks, list(refused) + list(rejected), scorer, stem, heading_boost)
+
+
+class BundleLoader:
+    """Loads the index from a corpus bundle (bundle.py); called again on a reload, which also picks up the release of the new file."""
+
+    def __init__(self, path: Path, key: bytes | None, allow_unsigned: bool) -> None:
+        self.path, self.key, self.allow_unsigned = path, key, allow_unsigned
+        self.release: str | None = None
+        self.signed = False
+
+    def __call__(self) -> tuple[TfidfIndex | None, list[str], list[str]]:
+        loaded = load_bundle(self.path, key=self.key, allow_unsigned=self.allow_unsigned)
+        self.release, self.signed = loaded.release, loaded.signed
+        return loaded.index, sorted({source for source, _ in loaded.documents}), []
 
 
 def _finish(
@@ -111,6 +127,11 @@ class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
                 reject(self)
                 return
             self._handle_query()
+        elif path == "/error":
+            if not authorized(self, self.server.token):
+                reject(self)
+                return
+            self._handle_error()
         elif path == "/stats":
             # the health path of the manifest: open, and numbers and file names only
             server = self.server
@@ -127,6 +148,8 @@ class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
                 "headingBoost": index.heading_boost if index is not None else None,
                 "minScore": server.min_score,
                 "minCoverage": server.min_coverage,
+                "release": server.release,
+                "bundleSigned": server.bundle_signed,
                 "reloadable": server.loader is not None,
                 "reloads": server.reloads,
                 "lastReloadError": server.last_reload_error,
@@ -157,6 +180,18 @@ class Handler(MetricsHandlerMixin, BaseHTTPRequestHandler):
             "chunks": len(index.chunks) if index is not None else 0,
             "builtAtMs": self.server.built_at_ms,
         })
+
+    def _handle_error(self) -> None:
+        """Exact lookup of an error code or tool profile in the indexed catalog documents (catalog.py): by name or by number."""
+        if self.server.index is None:
+            _write_error(self, 503, "no documents were successfully ingested at startup - nothing to search")
+            return
+        code = _query_params(self).get("code")
+        if not code:
+            _write_error(self, 400, "missing required query param: code")
+            return
+        matches = lookup_code(self.server.index, code)
+        _write_json(self, 200, {"code": code, "found": bool(matches), "matches": matches})
 
     def _handle_query(self) -> None:
         if self.server.index is None:
@@ -209,8 +244,13 @@ class DocsQaServer(ThreadingHTTPServer):
         token: str = "",
         min_score: float = 0.0,
         min_coverage: float = 0.0,
+        release: str | None = None,
+        bundle_signed: bool = False,
     ) -> None:
         super().__init__(address, Handler)
+        # the release a bundle was built for (None when the index was built here from documents)
+        self.release = release
+        self.bundle_signed = bundle_signed
         self.index = index
         self.ingested_sources = ingested_sources
         self.rejected_descriptions = rejected_descriptions
@@ -241,6 +281,8 @@ class DocsQaServer(ThreadingHTTPServer):
                 return False, self.last_reload_error
             self.index, self.ingested_sources, self.rejected_descriptions = index, sources, rejected
             self.built_at_ms = int(time.time() * 1000)
+            if isinstance(self.loader, BundleLoader):
+                self.release, self.bundle_signed = self.loader.release, self.loader.signed
             self.reloads += 1
             self.last_reload_error = None
             return True, ""

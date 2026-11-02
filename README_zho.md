@@ -18,7 +18,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Method-RAG%20%2F%20Vector%20Search-orange.svg" alt="Method">
   <img src="https://img.shields.io/badge/Platform-Hailo--10-green.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-109%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-127%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.6-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -35,7 +35,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | 版本 | `0.1.6` |
 | 成熟度 | 可用 |
-| 测试 | 109 (`python -m pytest -q tests`) |
+| 测试 | 127 (`python -m pytest -q tests`) |
 | 技术栈 | Python / TF-IDF lexical retrieval |
 | 目标 | HYDRA-UMC 工作单元的 Raspberry Pi CM5 |
 | 真实硬件 | 不适用：这里的内容不在硬件上运行 |
@@ -51,7 +51,7 @@ GPL-3.0-or-later - see LICENSE
 | 领域 | 状态 | 在这里的含义 |
 |---|---|---|
 | 软件 | 🟡 | 主要用途可用；上面的诚实性检查列出了仍然缺少的内容 |
-| 测试 | 🟢 | 109 项自动测试，每次变更都会运行 |
+| 测试 | 🟢 | 127 项自动测试，每次变更都会运行 |
 | 真实硬件 | 🟢 | 不适用：这里的内容不在硬件上运行 |
 | 接口与协议 | 🟡 | 提供的路由或消息已有文档，并用客户端测试过；尚未被所有客户端使用 |
 | 集成 | 🟡 | 在 CM5 测试台上与其他服务一起运行，其消息遵循 SDK 的共享契约 |
@@ -125,6 +125,8 @@ flowchart LR
   [HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE) 下 4 个同级服务之一运行（与 VLA-Engine、Voice-UI 和 Semantic-Planner 并列），共享父项目的 HydraOS 镜像和模型权重，而非各自保留独立副本。
 * 📦 **显式的版本提升：** `pyproject.toml` 中的版本只由显式的 `bump` 命令提升（`python tools/hydra_project_tool.py bump`，它会运行 `bump_version.py`）- 构建绝不会更改它。
 * ✂️ **摘录式回答(可选):** `query --extractive` 和 `GET /query?...&extractive=1` 对每个段落返回包含问题中词语最多的那句话(是段落的一部分，绝不是生成的文字)，而不是段落开头的若干字符。
+* 🔢 **错误代码目录：** `catalog` 以只读方式读取控制器引导程序的状态码和失败码以及 URTC 的工具配置，并将其写成文档，每个代码或工具一节；`GET /error?code=0x05`（或按名称）精确回答，附带出处 `来源#章节@sha256`，代码未被记录时如实说明。每个控制器代码的含义都写在目录中，绝不凭空编造。
+* 📦 **按版本的语料：** `bundle --release X` 一次性构建索引，并写成带有每份文档哈希的文件，可选签名（使用密钥文件的 HMAC-SHA256）；`serve --bundle` 加载它，内容或签名不匹配时拒绝（未签名的仅在显式使用 `--allow-unsigned-bundle` 时接受）。`GET /stats` 显示版本。在 CI 中构建以及随镜像交付仍待接入。
 
 ## 🔒 安全与防护
 
@@ -208,7 +210,7 @@ Top 1 passage(s) for: "firmware flashing"
 
 ## 🧪 测试
 
-运行 `python -m pytest -q tests` 会执行 109 个自动测试，覆盖导入、TF-IDF 与 BM25 索引、确定性、缓存、语料清单、恶意输入、命令行和 HTTP 接口；不需要硬件和外部网络。
+运行 `python -m pytest -q tests` 会执行 127 个自动测试，覆盖导入、TF-IDF 与 BM25 索引、确定性、缓存、语料清单、恶意输入、命令行和 HTTP 接口；不需要硬件和外部网络。
 
 CI 运行 `HYDRA_UMC_CI=1 python tools/ci_validate.py`，检查清单、文档、八个 README 和图片。
 

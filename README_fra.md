@@ -18,7 +18,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Method-RAG%20%2F%20Vector%20Search-orange.svg" alt="Method">
   <img src="https://img.shields.io/badge/Platform-Hailo--10-green.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-109%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-127%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.6-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -35,7 +35,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Version | `0.1.6` |
 | Maturité | Fonctionnel |
-| Tests | 109 (`python -m pytest -q tests`) |
+| Tests | 127 (`python -m pytest -q tests`) |
 | Technologie | Python / TF-IDF lexical retrieval |
 | Cible | Le Raspberry Pi CM5 d'une cellule HYDRA-UMC |
 | Sur matériel réel | Sans objet : rien ici ne s'exécute sur du matériel |
@@ -51,7 +51,7 @@ Chaque ligne est une partie de ce dépôt et le feu dit où elle en est aujourd'
 | Domaine | État | Ce que cela veut dire ici |
 |---|---|---|
 | Logiciel | 🟡 | Fonctionne pour son usage principal ; la vérification d'honnêteté ci-dessus liste ce qui manque encore |
-| Tests | 🟢 | 109 tests automatiques, exécutés à chaque modification |
+| Tests | 🟢 | 127 tests automatiques, exécutés à chaque modification |
 | Matériel réel | 🟢 | Sans objet : rien ici ne s'exécute sur du matériel |
 | Interface et protocoles | 🟡 | Les routes ou les messages proposés sont documentés et testés avec un client ; tous les clients ne les ont pas encore utilisés |
 | Intégration | 🟡 | Il fonctionne avec les autres services sur le banc d'essai CM5 et ses messages suivent les contrats partagés du SDK |
@@ -180,6 +180,8 @@ frères (VLA-Engine, Voice-UI, Semantic-Planner) :
   conserver ses propres copies.
 * 📦 **Versionnage compteur kilométrique :** La version de `pyproject.toml` n'est augmentée que par la commande `bump` explicite (`python tools/hydra_project_tool.py bump`, qui exécute `bump_version.py`) - compiler ne la change jamais.
 * ✂️ **Réponses extractives (facultatif) :** `query --extractive` et `GET /query?...&extractive=1` renvoient, pour chaque passage, la phrase qui contient le plus de mots de la question (un morceau du passage, jamais du texte généré) au lieu des premiers caractères du passage.
+* 🔢 **Catalogue des codes d'erreur :** `catalog` lit les codes d'état et d'échec du bootloader du contrôleur et les profils d'outil d'URTC (lecture seule) et les écrit comme documents, une section par code ou outil ; `GET /error?code=0x05` (ou par nom) répond exactement, avec la citation `source#section@sha256`, et le dit quand le code n'est pas documenté. Le sens de chaque code du contrôleur est écrit dans le catalogue, jamais inventé.
+* 📦 **Corpus par version :** `bundle --release X` construit l'index une fois et l'écrit comme fichier avec le hachage de chaque document, éventuellement signé (HMAC-SHA256 avec un fichier de clé) ; `serve --bundle` le charge et le refuse si le contenu ou la signature ne correspondent pas (un non signé seulement avec `--allow-unsigned-bundle` explicite). `GET /stats` montre la version. Le construire dans la CI et le livrer avec l'image reste à raccorder.
 
 ## 🔒 Sécurité et protection
 
@@ -269,7 +271,7 @@ La même recherche est aussi accessible comme une API JSON/HTTP de longue durée
 
 ## 🧪 Tests
 
-109 tests automatiques s'exécutent avec `python -m pytest -q tests`. Ils couvrent l'ingestion, l'index TF-IDF et BM25, le déterminisme, le cache, le manifeste du corpus, les entrées hostiles, la ligne de commande et l'interface HTTP ; ni matériel ni réseau extérieur.
+127 tests automatiques s'exécutent avec `python -m pytest -q tests`. Ils couvrent l'ingestion, l'index TF-IDF et BM25, le déterminisme, le cache, le manifeste du corpus, les entrées hostiles, la ligne de commande et l'interface HTTP ; ni matériel ni réseau extérieur.
 
 La CI exécute `HYDRA_UMC_CI=1 python tools/ci_validate.py`, qui vérifie le manifeste, les documents, les huit README et les images.
 

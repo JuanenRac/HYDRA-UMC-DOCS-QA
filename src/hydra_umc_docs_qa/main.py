@@ -20,7 +20,9 @@ from pathlib import Path
 
 from . import __version__
 from .access import bind_problem, load_token
-from .api import DocsQaServer, build_corpus_index, build_server_index
+from .api import BundleLoader, DocsQaServer, build_corpus_index, build_server_index
+from .bundle import BundleError, build_bundle, read_key
+from .catalog import CatalogError, build_catalog
 from .corpus import CorpusError, collect, load_manifest
 from .cache import compute_cache_key, load_cached_index, save_cached_index
 from .extract import best_sentence
@@ -142,6 +144,9 @@ def _run_serve(
     token_file: str | None = None,
     min_score: float = 0.0,
     min_coverage: float = 0.0,
+    bundle: Path | None = None,
+    bundle_key_file: Path | None = None,
+    allow_unsigned_bundle: bool = False,
 ) -> int:
     try:
         token = load_token(token_file)
@@ -152,7 +157,9 @@ def _run_serve(
         if not (0.0 <= min_coverage <= 1.0) or min_score < 0.0:
             raise ValueError("--min-score must be 0 or more and --min-coverage between 0 and 1")
         options = {"scorer": scorer, "stem": stem, "heading_boost": heading_boost}
-        if corpus is not None:
+        if bundle is not None:
+            loader = BundleLoader(bundle, read_key(bundle_key_file) if bundle_key_file else None, allow_unsigned_bundle)
+        elif corpus is not None:
             manifest = load_manifest(corpus)
 
             def loader():
@@ -164,7 +171,7 @@ def _run_serve(
             def loader():
                 return build_server_index(docs, **options)
         index, ingested_sources, rejected_descriptions = loader()
-    except (ValueError, CorpusError) as exc:
+    except (ValueError, CorpusError, BundleError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     for description in rejected_descriptions:
@@ -177,9 +184,10 @@ def _run_serve(
     server = DocsQaServer(
         (addr, port), index, ingested_sources, rejected_descriptions,
         loader=loader, token=token, min_score=min_score, min_coverage=min_coverage,
+        release=getattr(loader, "release", None), bundle_signed=getattr(loader, "signed", False),
     )
     print(f"[docs-qa] HTTP API listening on {addr}:{port}")
-    print("[docs-qa] GET /query?q=...&top_k=N, GET /stats" + (", POST /reload (and SIGHUP)" if token else ""))
+    print("[docs-qa] GET /query?q=...&top_k=N, GET /error?code=..., GET /stats" + (", POST /reload (and SIGHUP)" if token else ""))
     if not token:
         print("[docs-qa] no token: reload is off (give --token-file to allow POST /reload); SIGHUP reloads the documents all the same")
     if hasattr(signal, "SIGHUP"):
@@ -256,6 +264,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Smallest share (0 to 1) of the words of the question that some section must hold (0: any match). A request may ask for more, never less.",
     )
     serve_parser.add_argument(
+        "--bundle", type=Path, default=None,
+        help="Load the index of a release from a corpus bundle (see 'bundle') instead of indexing documents here.",
+    )
+    serve_parser.add_argument(
+        "--bundle-key-file", type=Path, default=None, dest="bundle_key_file",
+        help="File with the key the bundle was signed with; its signature is checked against it.",
+    )
+    serve_parser.add_argument(
+        "--allow-unsigned-bundle", action="store_true", dest="allow_unsigned_bundle",
+        help="Accept a bundle whose signature cannot be checked (unsigned, or no key given). Off by default: the bundle is refused.",
+    )
+    serve_parser.add_argument(
         "--docs",
         nargs="+",
         type=Path,
@@ -264,7 +284,55 @@ def build_parser() -> argparse.ArgumentParser:
              "searched recursively; default: this repo's own README.md/CHANGELOG.md).",
     )
 
+    catalog_parser = subparsers.add_parser(
+        "catalog", help="Write the error codes of the controller and the URTC tool profiles as documents the assistant can index and cite."
+    )
+    catalog_parser.add_argument("--mcu-protocol", type=Path, required=True, dest="mcu_protocol", help="The protocol.py of the controller bridge (read only).")
+    catalog_parser.add_argument("--urtc-tools", type=Path, default=None, dest="urtc_tools", help="The spec/tools.json of URTC (read only).")
+    catalog_parser.add_argument("--out", type=Path, required=True, help="Directory the documents are written to.")
+
+    bundle_parser = subparsers.add_parser(
+        "bundle", help="Build the index of a release once and write it as a file (optionally signed) that 'serve --bundle' loads."
+    )
+    bundle_parser.add_argument("--release", required=True, help="The release the corpus belongs to, for example 0.3.0.")
+    bundle_parser.add_argument("--out", type=Path, required=True, help="The bundle file to write.")
+    bundle_parser.add_argument("--key-file", type=Path, default=None, dest="key_file", help="File with the key to sign the bundle with (HMAC-SHA256).")
+    bundle_parser.add_argument("--docs", nargs="+", type=Path, default=None, help="Markdown files or directories to index.")
+    _add_retrieval_options(bundle_parser)
+
     return parser
+
+
+def _run_catalog(args: argparse.Namespace) -> int:
+    try:
+        written = build_catalog(args.mcu_protocol, args.urtc_tools, args.out)
+    except CatalogError as exc:
+        print(f"ERROR: {exc}")
+        return 2
+    for path in written:
+        print(f"wrote {path}")
+    return 0
+
+
+def _run_bundle(args: argparse.Namespace) -> int:
+    try:
+        if args.corpus is not None:
+            index, _sources, rejected = build_corpus_index(load_manifest(args.corpus), scorer=args.scorer, stem=args.stem, heading_boost=args.heading_boost)
+        else:
+            docs = args.docs if args.docs is not None else list(_DEFAULT_DOCS)
+            index, _sources, rejected = build_server_index(docs, scorer=args.scorer, stem=args.stem, heading_boost=args.heading_boost)
+        for description in rejected:
+            print(f"REJECTED {description}")
+        if index is None:
+            print("ERROR: no document could be indexed, so there is nothing to put in a bundle")
+            return 1
+        header = build_bundle(index, args.release, args.out, key=read_key(args.key_file) if args.key_file else None)
+    except (ValueError, CorpusError, BundleError) as exc:
+        print(f"ERROR: {exc}")
+        return 2
+    print(f"wrote {args.out}: release {header['release']}, {header['documents']} document(s), {header['chunks']} section(s), "
+          f"{'signed' if header['signed'] else 'NOT signed'}, digest {header['digest']}")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -291,7 +359,12 @@ def main(argv: list[str] | None = None) -> int:
         return _run_serve(
             args.addr, args.port, docs, corpus=args.corpus, scorer=args.scorer, stem=args.stem, heading_boost=args.heading_boost,
             token_file=args.token_file, min_score=args.min_score, min_coverage=args.min_coverage,
+            bundle=args.bundle, bundle_key_file=args.bundle_key_file, allow_unsigned_bundle=args.allow_unsigned_bundle,
         )
+    if args.command == "catalog":
+        return _run_catalog(args)
+    if args.command == "bundle":
+        return _run_bundle(args)
 
     _print_identity()
     return 0

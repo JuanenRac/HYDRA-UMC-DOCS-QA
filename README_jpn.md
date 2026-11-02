@@ -18,7 +18,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Method-RAG%20%2F%20Vector%20Search-orange.svg" alt="Method">
   <img src="https://img.shields.io/badge/Platform-Hailo--10-green.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-109%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-127%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.6-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -35,7 +35,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | バージョン | `0.1.6` |
 | 成熟度 | 機能する |
-| テスト | 109 (`python -m pytest -q tests`) |
+| テスト | 127 (`python -m pytest -q tests`) |
 | 技術 | Python / TF-IDF lexical retrieval |
 | 対象 | HYDRA-UMC セルの Raspberry Pi CM5 |
 | 実機での確認 | 対象外：ここにあるものはハードウェア上では動きません |
@@ -51,7 +51,7 @@ GPL-3.0-or-later - see LICENSE
 | 領域 | 状態 | ここでの意味 |
 |---|---|---|
 | ソフトウェア | 🟡 | 主な目的では動作します。足りない点は上の正直さの確認に書かれています |
-| テスト | 🟢 | 自動テスト 109 件。変更のたびに実行されます |
+| テスト | 🟢 | 自動テスト 127 件。変更のたびに実行されます |
 | 実機 | 🟢 | 対象外：ここにあるものはハードウェア上では動きません |
 | インターフェースとプロトコル | 🟡 | 提供するルートやメッセージは文書化され、クライアントで試験済みです。すべてのクライアントがまだ使ったわけではありません |
 | 連携 | 🟡 | CM5 のテストベンチで他のサービスと一緒に動作し、メッセージは SDK の共通契約に従います |
@@ -126,6 +126,8 @@ flowchart LR
   [HYDRA-UMC-COGNITIVE-NODE](https://github.com/JuanenRac/HYDRA-UMC-COGNITIVE-NODE) の下で 4 つの兄弟サービスの 1 つとして動作します（VLA-Engine、Voice-UI、Semantic-Planner と並んで）。独自のコピーを保持するのではなく、親プロジェクトの HydraOS イメージとモデルの重みを共有します。
 * 📦 **明示的なバージョン引き上げ：** `pyproject.toml` のバージョンを上げるのは明示的な `bump` コマンド（`python tools/hydra_project_tool.py bump`、内部で `bump_version.py` を実行）だけです - ビルドがバージョンを変更することはありません。
 * ✂️ **抜粋型の回答(任意):** `query --extractive` と `GET /query?...&extractive=1` は、各箇所について、先頭の文字ではなく、質問の語を最も多く含む文(その箇所の一部であり、生成された文章ではありません)を返します。
+* 🔢 **エラーコードのカタログ：** `catalog` はコントローラーのブートローダーのステータスコードと失敗コード、および URTC のツールプロファイルを（読み取り専用で）読み、コードまたはツールごとに 1 セクションの文書として書き出します。`GET /error?code=0x05`（または名前）は出典 `source#section@sha256` 付きで正確に答え、文書化されていないコードではその旨を答えます。各コントローラーコードの意味はカタログに書かれており、推測で作られることはありません。
+* 📦 **リリースごとのコーパス：** `bundle --release X` はインデックスを一度作り、各文書のハッシュ付きのファイルとして書き出します。任意で署名できます（鍵ファイルによる HMAC-SHA256）。`serve --bundle` はそれを読み込み、内容または署名が一致しなければ拒否します（署名なしは明示的な `--allow-unsigned-bundle` の場合のみ）。`GET /stats` にリリースが表示されます。CI での作成とイメージでの配布は、これから接続します。
 
 ## 🔒 セキュリティと安全
 
@@ -212,7 +214,7 @@ Top 1 passage(s) for: "firmware flashing"
 
 ## 🧪 テスト
 
-`python -m pytest -q tests` で自動テスト 109 件を実行します。取り込み、TF-IDF と BM25 のインデックス、決定性、キャッシュ、コーパスのマニフェスト、悪意ある入力、コマンドライン、HTTP の窓口をカバーし、ハードウェアも外部ネットワークも不要です。
+`python -m pytest -q tests` で自動テスト 127 件を実行します。取り込み、TF-IDF と BM25 のインデックス、決定性、キャッシュ、コーパスのマニフェスト、悪意ある入力、コマンドライン、HTTP の窓口をカバーし、ハードウェアも外部ネットワークも不要です。
 
 CI は `HYDRA_UMC_CI=1 python tools/ci_validate.py` を実行し、マニフェスト、文書、8 つの README、図を検査します。
 
