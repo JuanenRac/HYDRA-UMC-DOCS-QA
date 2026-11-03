@@ -139,6 +139,7 @@ def _run_serve(
     port: int,
     docs: list[Path],
     *,
+    health_open: bool = False,
     corpus: Path | None = None,
     scorer: str = "tfidf",
     stem: bool = False,
@@ -200,7 +201,7 @@ def _run_serve(
 
         signal.signal(signal.SIGHUP, _on_hangup)
     try:
-        server.health_open = health_open_requested(args.health_open)
+        server.health_open = health_open_requested(health_open)
         server.serve_forever()
     except KeyboardInterrupt:
         pass
@@ -365,6 +366,7 @@ def main(argv: list[str] | None = None) -> int:
             args.addr, args.port, docs, corpus=args.corpus, scorer=args.scorer, stem=args.stem, heading_boost=args.heading_boost,
             token_file=args.token_file, min_score=args.min_score, min_coverage=args.min_coverage,
             bundle=args.bundle, bundle_key_file=args.bundle_key_file, allow_unsigned_bundle=args.allow_unsigned_bundle,
+            health_open=args.health_open,
         )
     if args.command == "catalog":
         return _run_catalog(args)
