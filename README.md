@@ -18,7 +18,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Method-RAG%20%2F%20Vector%20Search-orange.svg" alt="Method">
   <img src="https://img.shields.io/badge/Platform-Hailo--10-green.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-127%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-132%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.7-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -35,7 +35,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Version | `0.1.7` |
 | Maturity | Functional |
-| Tests | 127 (`python -m pytest -q tests`) |
+| Tests | 132 (`python -m pytest -q tests`) |
 | Stack | Python / TF-IDF lexical retrieval |
 | Target | The Raspberry Pi CM5 of a HYDRA-UMC cell |
 | On real hardware | Not applicable: nothing here runs on hardware |
@@ -51,7 +51,7 @@ Each line is one part of this repository and the light says how far it is today.
 | Area | State | What it means here |
 |---|---|---|
 | Software | 🟡 | Works for its main purpose; the honesty check above lists what is still missing |
-| Tests | 🟢 | 127 automated tests, run on every change |
+| Tests | 🟢 | 132 automated tests, run on every change |
 | Real hardware | 🟢 | Not applicable: nothing here runs on hardware |
 | Interface and protocols | 🟡 | The routes or messages it offers are documented and tested with a client; not every client has used them yet |
 | Integration | 🟡 | It runs together with the other services on the CM5 test bench and its messages follow the shared contracts of the SDK |
@@ -264,7 +264,7 @@ The same search is also reachable as a long-running JSON/HTTP API via `./run.sh 
 
 ## 🧪 Testing
 
-127 automated tests run with `python -m pytest -q tests`. They cover ingestion, the TF-IDF and BM25 index, determinism, the cache, the corpus manifest, hostile inputs, the command line and the HTTP surface; no hardware and no outside network.
+132 automated tests run with `python -m pytest -q tests`. They cover ingestion, the TF-IDF and BM25 index, determinism, the cache, the corpus manifest, hostile inputs, the command line and the HTTP surface; no hardware and no outside network.
 
 The CI runs `HYDRA_UMC_CI=1 python tools/ci_validate.py`, which checks the manifest, the documents, the eight READMEs and the pictures.
 
