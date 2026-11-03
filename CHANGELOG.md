@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A uniform `GET /health`, closed by default:** `serve --health-open` (or `HYDRA_UMC_DOCS_QA_HEALTH_OPEN=1`) makes the service answer `GET /health` with `{"status": "ok", "service": ..., "version": ...}`, the same body in every service of the family, so a watchdog reads the health of any of them the same way. Without the switch the route answers `404` like a route that does not exist. A caller that is not on loopback must present the bearer token of the service (a service started without a token never answers one). The body carries no path, configuration or secret; the health path the manifest declares does not change.
+
 ## [0.1.7] - A catalogue of MCU and tool errors with exact answers and citations and a signed corpus bundle for each release
 
 - **Error codes and URTC tool profiles as structured documents:** `catalog` reads the status and failure codes of the controller bootloader and the tool profiles of URTC (both only read) and writes them as documents with one section per code or tool, and `GET /error?code=` (by number, `0x05`, or by name) answers exactly from the indexed sections, with the kind and the citation `source#section@sha256`; a code that is not documented gives `found: false`, never a guess. The meaning of each controller code is written in the catalog, and a code without one says so. 18 new tests (with those of the release bundle).

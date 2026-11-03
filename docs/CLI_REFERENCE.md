@@ -222,3 +222,10 @@ $ hydra-umc-docs-qa serve --bundle corpus-0.3.0.json --bundle-key-file key.txt
 `serve` itself never exits with `1` for a bad request — a malformed
 query or unknown route is a real HTTP error status (`400`/`404`/`503`),
 not a process exit; the process itself only stops on `Ctrl-C`.
+
+
+## `GET /health` (off by default)
+
+A uniform health route, the same in every service of the family. It is closed unless the operator opens it with `serve --health-open` or `HYDRA_UMC_DOCS_QA_HEALTH_OPEN=1`: closed, it answers `404 {"error": "not found"}` like any route that does not exist.
+
+Open, it answers `200` with `{"status": "ok", "service": "hydra-umc-docs-qa", "version": "<version>"}` to a caller on loopback. A caller that is not on loopback must present the bearer token of the service (a service started without a token never answers one). The body never carries a path, a setting or a secret. The health path of the project manifest (`health_path`) is unchanged.

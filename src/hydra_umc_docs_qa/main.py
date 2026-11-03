@@ -20,6 +20,7 @@ from typing import Any
 from pathlib import Path
 
 from . import __version__
+from .health_route import health_open_requested
 from .access import bind_problem, load_token
 from .api import BundleLoader, DocsQaServer, build_corpus_index, build_server_index
 from .bundle import BundleError, build_bundle, read_key
@@ -199,6 +200,7 @@ def _run_serve(
 
         signal.signal(signal.SIGHUP, _on_hangup)
     try:
+        server.health_open = health_open_requested(args.health_open)
         server.serve_forever()
     except KeyboardInterrupt:
         pass
@@ -250,6 +252,7 @@ def build_parser() -> argparse.ArgumentParser:
              "the real TfidfIndex ONCE at startup and reuses it for every query.",
     )
     serve_parser.add_argument("--addr", default="127.0.0.1", help="address to bind the HTTP API to")
+    serve_parser.add_argument("--health-open", action="store_true", help="answer GET /health (open to loopback, to other callers only with the bearer token); closed by default, or set HYDRA_UMC_DOCS_QA_HEALTH_OPEN=1")
     serve_parser.add_argument("--port", type=int, default=8110, help="port for the HTTP API")
     _add_retrieval_options(serve_parser)
     serve_parser.add_argument(
