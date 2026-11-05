@@ -128,6 +128,7 @@ flowchart LR
 * 🔢 **错误代码目录：** `catalog` 以只读方式读取控制器引导程序的状态码和失败码以及 URTC 的工具配置，并将其写成文档，每个代码或工具一节；`GET /error?code=0x05`（或按名称）精确回答，附带出处 `来源#章节@sha256`，代码未被记录时如实说明。每个控制器代码的含义都写在目录中，绝不凭空编造。
 * 📦 **按版本的语料：** `bundle --release X` 一次性构建索引，并写成带有每份文档哈希的文件，可选签名（使用密钥文件的 HMAC-SHA256）；`serve --bundle` 加载它，内容或签名不匹配时拒绝（未签名的仅在显式使用 `--allow-unsigned-bundle` 时接受）。`GET /stats` 显示版本。在 CI 中构建以及随镜像交付仍待接入。
 * 🩺 **统一的 `GET /health`，默认关闭：** `serve --health-open`（或 `HYDRA_UMC_DOCS_QA_HEALTH_OPEN=1`）使服务以 `{"status": "ok", "service": ..., "version": ...}` 响应 `GET /health`，家族中每个服务的响应体相同；没有该开关时，该路由像不存在的路由一样返回 `404`。非回环地址的调用方必须出示服务的 bearer 令牌，响应体不含路径、配置或密钥。
+* 🪪 **HYDRA-UMC-SERVER 的身份（默认关闭）：** `serve --identity-key-file 文件`（或 `HYDRA_UMC_DOCS_QA_IDENTITY_KEY_FILE=文件`）会让服务在自己的令牌之外，也接受服务器在登录时签发的已签名令牌：查看者只能读取而不能更改，没有凭据的请求即使在环回地址上也会被拒绝。不开启该开关时一切照旧。
 
 ## 🔒 安全与防护
 

@@ -21,6 +21,7 @@ from pathlib import Path
 
 from . import __version__
 from .health_route import health_open_requested
+from .server_identity import identity_key_from
 from .access import bind_problem, load_token
 from .api import BundleLoader, DocsQaServer, build_corpus_index, build_server_index
 from .bundle import BundleError, build_bundle, read_key
@@ -150,10 +151,12 @@ def _run_serve(
     bundle: Path | None = None,
     bundle_key_file: Path | None = None,
     allow_unsigned_bundle: bool = False,
+    identity_key_file: str | None = None,
 ) -> int:
     try:
         token = load_token(token_file)
-        problem = bind_problem(addr, token)
+        identity_key = identity_key_from(identity_key_file)
+        problem = bind_problem(addr, token) if identity_key is None else None
         if problem:
             print(f"error: {problem}", file=sys.stderr)
             return 2
@@ -190,9 +193,10 @@ def _run_serve(
         loader=loader, token=token, min_score=min_score, min_coverage=min_coverage,
         release=getattr(loader, "release", None), bundle_signed=getattr(loader, "signed", False),
     )
+    server.identity_key = identity_key
     print(f"[docs-qa] HTTP API listening on {addr}:{port}")
-    print("[docs-qa] GET /query?q=...&top_k=N, GET /error?code=..., GET /stats" + (", POST /reload (and SIGHUP)" if token else ""))
-    if not token:
+    print("[docs-qa] GET /query?q=...&top_k=N, GET /error?code=..., GET /stats" + (", POST /reload (and SIGHUP)" if token or identity_key is not None else "") + ("; tokens of HYDRA-UMC-SERVER accepted, nothing is open" if identity_key is not None else ""))
+    if not token and identity_key is None:
         print("[docs-qa] no token: reload is off (give --token-file to allow POST /reload); SIGHUP reloads the documents all the same")
     if hasattr(signal, "SIGHUP"):
         def _on_hangup(_signum, _frame) -> None:
@@ -256,6 +260,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve_parser.add_argument("--health-open", action="store_true", help="answer GET /health (open to loopback, to other callers only with the bearer token); closed by default, or set HYDRA_UMC_DOCS_QA_HEALTH_OPEN=1")
     serve_parser.add_argument("--port", type=int, default=8110, help="port for the HTTP API")
     _add_retrieval_options(serve_parser)
+    serve_parser.add_argument("--identity-key-file", default=None, dest="identity_key_file", help="file with the signing key of HYDRA-UMC-SERVER (its JWT_SECRET): a valid token of the SERVER is then accepted, every route (GET /health and GET /stats too) demands an identity and a viewer may read but not change (off by default; or set HYDRA_UMC_DOCS_QA_IDENTITY_KEY_FILE)")
     serve_parser.add_argument(
         "--token-file", default=None, dest="token_file",
         help="File with the bearer token GET /query and POST /reload require (or HYDRA_UMC_DOCS_QA_TOKEN). Needed to bind an address that "
@@ -366,7 +371,7 @@ def main(argv: list[str] | None = None) -> int:
             args.addr, args.port, docs, corpus=args.corpus, scorer=args.scorer, stem=args.stem, heading_boost=args.heading_boost,
             token_file=args.token_file, min_score=args.min_score, min_coverage=args.min_coverage,
             bundle=args.bundle, bundle_key_file=args.bundle_key_file, allow_unsigned_bundle=args.allow_unsigned_bundle,
-            health_open=args.health_open,
+            health_open=args.health_open, identity_key_file=args.identity_key_file,
         )
     if args.command == "catalog":
         return _run_catalog(args)

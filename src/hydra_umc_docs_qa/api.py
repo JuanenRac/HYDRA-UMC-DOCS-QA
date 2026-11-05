@@ -122,20 +122,23 @@ class Handler(HealthRouteMixin, MetricsHandlerMixin, BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         if self.serve_health(self.server.token):
             return
-        if self.serve_metrics(authorized=authorized(self, self.server.token)):
+        if self.serve_metrics(authorized=authorized(self, self.server.token, self.server.identity_key)):
             return
         path = urlparse(self.path).path
         if path == "/query":
-            if not authorized(self, self.server.token):
+            if not authorized(self, self.server.token, self.server.identity_key):
                 reject(self)
                 return
             self._handle_query()
         elif path == "/error":
-            if not authorized(self, self.server.token):
+            if not authorized(self, self.server.token, self.server.identity_key):
                 reject(self)
                 return
             self._handle_error()
         elif path == "/stats":
+            if self.server.identity_key is not None and not authorized(self, self.server.token, self.server.identity_key):
+                reject(self)  # with the identity of HYDRA-UMC-SERVER on, not even the health path is open
+                return
             # the health path of the manifest: open, and numbers and file names only
             server = self.server
             index = server.index
@@ -166,10 +169,10 @@ class Handler(HealthRouteMixin, MetricsHandlerMixin, BaseHTTPRequestHandler):
             _write_error(self, 404, "not found")
             return
         # a reload re-reads the disk of the server: only a caller that holds the token may ask for it, and without a token nobody may
-        if not self.server.token:
+        if not self.server.token and self.server.identity_key is None:
             _write_error(self, 403, "reload needs a bearer token: start the service with --token-file")
             return
-        if not authorized(self, self.server.token):
+        if not authorized(self, self.server.token, self.server.identity_key):
             reject(self)
             return
         if self.server.loader is None:
@@ -237,6 +240,7 @@ class Handler(HealthRouteMixin, MetricsHandlerMixin, BaseHTTPRequestHandler):
 
 class DocsQaServer(ThreadingHTTPServer):
     health_open: bool = False  # GET /health answers only when the operator opens it (health_route.py)
+    identity_key: bytes | None = None  # the signing key of HYDRA-UMC-SERVER, when the operator turned its identity on (server_identity.py)
     def __init__(
         self,
         address: tuple[str, int],
