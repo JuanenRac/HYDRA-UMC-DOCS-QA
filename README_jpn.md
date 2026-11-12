@@ -18,7 +18,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Method-RAG%20%2F%20Vector%20Search-orange.svg" alt="Method">
   <img src="https://img.shields.io/badge/Platform-Hailo--10-green.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-175%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-192%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.8-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -35,7 +35,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | バージョン | `0.1.8` |
 | 成熟度 | 機能する |
-| テスト | 175 (`python -m pytest -q tests`) |
+| テスト | 192 (`python -m pytest -q tests`) |
 | 技術 | Python / TF-IDF lexical retrieval |
 | 対象 | HYDRA-UMC セルの Raspberry Pi CM5 |
 | 実機での確認 | 対象外：ここにあるものはハードウェア上では動きません |
@@ -51,7 +51,7 @@ GPL-3.0-or-later - see LICENSE
 | 領域 | 状態 | ここでの意味 |
 |---|---|---|
 | ソフトウェア | 🟡 | 主な目的では動作します。足りない点は上の正直さの確認に書かれています |
-| テスト | 🟢 | 自動テスト 175 件。変更のたびに実行されます |
+| テスト | 🟢 | 自動テスト 192 件。変更のたびに実行されます |
 | 実機 | 🟢 | 対象外：ここにあるものはハードウェア上では動きません |
 | インターフェースとプロトコル | 🟡 | 提供するルートやメッセージは文書化され、クライアントで試験済みです。すべてのクライアントがまだ使ったわけではありません |
 | 連携 | 🟡 | CM5 のテストベンチで他のサービスと一緒に動作し、メッセージは SDK の共通契約に従います |
@@ -220,7 +220,7 @@ Top 1 passage(s) for: "firmware flashing"
 
 ## 🧪 テスト
 
-`python -m pytest -q tests` で自動テスト 175 件を実行します。取り込み、TF-IDF と BM25 のインデックス、決定性、キャッシュ、コーパスのマニフェスト、悪意ある入力、コマンドライン、HTTP の窓口をカバーし、ハードウェアも外部ネットワークも不要です。
+`python -m pytest -q tests` で自動テスト 192 件を実行します。取り込み、TF-IDF と BM25 のインデックス、決定性、キャッシュ、コーパスのマニフェスト、悪意ある入力、コマンドライン、HTTP の窓口をカバーし、ハードウェアも外部ネットワークも不要です。
 
 CI は `HYDRA_UMC_CI=1 python tools/ci_validate.py` を実行し、マニフェスト、文書、8 つの README、図を検査します。
 
