@@ -74,6 +74,8 @@ GPL-3.0-or-later - see LICENSE
 
 **HYDRA-UMC-DOCS-QA** 用生态系统自己的文档回答问题：找出最匹配的段落，并附上文件和块编号引用。它属于 Hailo-10 认知家族，但目前只是没有语言模型的简单词汇检索（TF-IDF 或 BM25），返回的是引用，绝不是生成的回答。
 
+> **平台：** 本 README 中的 CM5 指的是目前正在运行的试验台；HYDRA-UMC 的目标平台是 NVIDIA Jetson Orin NX 16 GB，这是尚未制造或测试的设计。
+
 ## 🏛️ 架构
 
 <p align="center">

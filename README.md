@@ -71,6 +71,8 @@ It answers only from the Markdown documents it is given with `--docs`, locally a
 
 **HYDRA-UMC-DOCS-QA** answers a question about the ecosystem from its own documents: it finds the passages that match best and quotes them with their file and chunk number. It belongs to the Hailo-10 cognitive family, but today it is plain lexical retrieval (TF-IDF or BM25) with no language model, so what it returns is a citation, never a generated answer.
 
+> **Platform:** where this README says CM5, it means the pilot bench that runs today; the target platform of HYDRA-UMC is an NVIDIA Jetson Orin NX 16 GB, a design that has not been built or tested.
+
 ## 🏛️ Architecture
 
 <p align="center">

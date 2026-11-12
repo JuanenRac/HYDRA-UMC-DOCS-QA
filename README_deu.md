@@ -71,6 +71,8 @@ Er antwortet nur aus den Markdown-Dokumenten, die ihm mit `--docs` übergeben we
 
 **HYDRA-UMC-DOCS-QA** beantwortet eine Frage zum Ökosystem aus dessen eigenen Dokumenten: Er findet die am besten passenden Abschnitte und zitiert sie mit Datei und Abschnittsnummer. Er gehört zur kognitiven Hailo-10-Familie, ist heute aber einfache lexikalische Suche (TF-IDF oder BM25) ohne Sprachmodell, liefert also ein Zitat und nie eine erzeugte Antwort.
 
+> **Plattform:** Wo dieses README CM5 sagt, ist der Pilotprüfstand gemeint, der heute läuft; die Zielplattform von HYDRA-UMC ist ein NVIDIA Jetson Orin NX 16 GB, ein Entwurf, der weder gebaut noch getestet wurde.
+
 ## 🏛️ Architektur
 
 <p align="center">

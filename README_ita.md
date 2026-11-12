@@ -71,6 +71,8 @@ Risponde solo dai documenti Markdown che gli vengono dati con `--docs`, in local
 
 **HYDRA-UMC-DOCS-QA** risponde a una domanda sull'ecosistema con i suoi stessi documenti: trova i passaggi più adatti e li cita con file e numero di blocco. Appartiene alla famiglia cognitiva Hailo-10, ma oggi è un semplice recupero lessicale (TF-IDF o BM25) senza modello linguistico, quindi ciò che restituisce è una citazione, mai una risposta generata.
 
+> **Piattaforma:** dove questo README dice CM5, intende il banco pilota che funziona oggi; la piattaforma di destinazione di HYDRA-UMC è un NVIDIA Jetson Orin NX da 16 GB, un progetto non costruito né provato.
+
 ## 🏛️ Architettura
 
 <p align="center">
