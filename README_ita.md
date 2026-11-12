@@ -18,7 +18,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Method-RAG%20%2F%20Vector%20Search-orange.svg" alt="Method">
   <img src="https://img.shields.io/badge/Platform-Hailo--10-green.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-137%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-175%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.8-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -35,7 +35,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Versione | `0.1.8` |
 | Maturità | Funzionale |
-| Test | 137 (`python -m pytest -q tests`) |
+| Test | 175 (`python -m pytest -q tests`) |
 | Tecnologia | Python / TF-IDF lexical retrieval |
 | Destinazione | Il Raspberry Pi CM5 di una cella HYDRA-UMC |
 | Su hardware reale | Non applicabile: nulla qui gira su hardware |
@@ -51,7 +51,7 @@ Ogni riga è una parte di questo repository e il semaforo dice a che punto è og
 | Area | Stato | Cosa significa qui |
 |---|---|---|
 | Software | 🟡 | Funziona per il suo scopo principale; la verifica di onestà qui sopra elenca ciò che manca ancora |
-| Test | 🟢 | 137 test automatici, eseguiti a ogni modifica |
+| Test | 🟢 | 175 test automatici, eseguiti a ogni modifica |
 | Hardware reale | 🟢 | Non applicabile: nulla qui gira su hardware |
 | Interfaccia e protocolli | 🟡 | Le rotte o i messaggi offerti sono documentati e provati con un client; non tutti i client li hanno ancora usati |
 | Integrazione | 🟡 | Funziona insieme agli altri servizi sul banco prova CM5 e i suoi messaggi seguono i contratti condivisi dell'SDK |
@@ -163,7 +163,7 @@ tre fratelli (VLA-Engine, Voice-UI, Semantic-Planner):
 
 ## ✨ Funzionalità
 
-* 🔍 **Ricerca vettoriale locale (v0):** Vero recupero lessicale TF-IDF, solo stdlib, su documenti Markdown locali. *(implementato come vera ricerca lessicale - non ancora ricerca semantica basata su embedding, e l'ingestione PDF resta lavoro futuro; vedi BUILD ED ESECUZIONE sotto)*
+* 🔍 **Ricerca vettoriale locale (v0):** Vero recupero lessicale TF-IDF, solo stdlib, su documenti Markdown locali. *(implementato come vera ricerca lessicale - non ancora ricerca semantica basata su embedding, e l'ingestione PDF e la similarità per embedding sono facoltative e disattivate di default; vedi i due punti seguenti e BUILD ED ESECUZIONE sotto)*
 * 🔒 **Vera lista consentiti dei documenti:** vengono ingeriti e citati solo i file `.md`/`.markdown` realmente esistenti - qualsiasi altro percorso `--docs` (mancante, o di un tipo di file non consentito) viene rifiutato con un motivo distinto e stampato, invece di essere ignorato silenziosamente o letto come se fosse documentazione reale. *(implementato)*
 * 🔗 **Citazioni tracciabili:** ogni risultato cita `source#index` - un puntatore stabile e univoco al passaggio esatto ingerito, recuperabile in modo deterministico rianalizzando la stessa fonte. *(implementato)*
 * 🎯 **Punteggio deterministico:** il ranking è una funzione pura del corpus e del testo della query, indipendente dal seed hash per processo dell'interprete. *(implementato)*
@@ -184,6 +184,8 @@ tre fratelli (VLA-Engine, Voice-UI, Semantic-Planner):
 * 📦 **Corpus per versione:** `bundle --release X` costruisce l'indice una volta e lo scrive come file con l'hash di ogni documento, facoltativamente firmato (HMAC-SHA256 con un file di chiave); `serve --bundle` lo carica e lo rifiuta se il contenuto o la firma non corrispondono (uno non firmato solo con l'esplicito `--allow-unsigned-bundle`). `GET /stats` mostra la versione. Costruirlo nella CI e consegnarlo con l'immagine resta da collegare.
 * 🩺 **Un `GET /health` uniforme, chiuso per impostazione predefinita:** `serve --health-open` (o `HYDRA_UMC_DOCS_QA_HEALTH_OPEN=1`) fa rispondere il servizio a `GET /health` con `{"status": "ok", "service": ..., "version": ...}`, lo stesso corpo in ogni servizio della famiglia; senza l'interruttore la route risponde `404` come una route inesistente. Chi non è in loopback deve presentare il token bearer del servizio, e il corpo non contiene percorsi, configurazione né segreti.
 * 🪪 **L'identità di HYDRA-UMC-SERVER, disattivata per impostazione predefinita:** `serve --identity-key-file FILE` (o `HYDRA_UMC_DOCS_QA_IDENTITY_KEY_FILE=FILE`) fa accettare al servizio il token firmato che il server emette al login, oltre al proprio token: un visualizzatore può leggere ma non modificare, e una richiesta senza credenziali viene rifiutata anche in loopback. Senza l'interruttore non cambia nulla.
+* 📄 **Ingestione PDF (facoltativa, disattivata di default):** `--pdf` (o `HYDRA_UMC_DOCS_QA_PDF=1`) acquisisce anche i file `.pdf`: ogni pagina con testo diventa una sezione intitolata `Page N`, citata come le altre. Si legge con la sola libreria standard, senza OCR (una pagina scansionata non dà nulla), senza leggere le mappe dei font (codici di glifo propri danno testo illeggibile o vuoto); i file cifrati sono rifiutati e un documento senza pagine leggibili viene segnalato invece di indicizzare rumore. *(implementato; provato su PDF generati, non su manuali reali)*
+* 🧭 **Similarità per embedding (facoltativa, disattivata di default):** `--embedder SPEC` aggiunge un termine di similarità alla classifica (punteggio lessicale più un peso per il coseno dei vettori di domanda e sezione). `builtin:ngram` è incluso nel progetto e tollera errori di battitura e desinenze, ma NON è un modello semantico; `module:callable` prende una funzione propria, per esempio attorno a un modello di embedding di frasi installato, perché il progetto non dipende da alcun modello. Una sezione trovata solo per similarità mantiene copertura 0, quindi `--min-coverage` la segnala comunque come debole. *(implementato; provato con l'embedder incluso e un modello finto, mai con uno reale)*
 
 ## 🔒 Sicurezza e protezione
 
@@ -273,7 +275,7 @@ La stessa ricerca è raggiungibile anche come API JSON/HTTP di lunga durata tram
 
 ## 🧪 Test
 
-137 test automatici si eseguono con `python -m pytest -q tests`. Coprono l'acquisizione, l'indice TF-IDF e BM25, il determinismo, la cache, il manifesto del corpus, input ostili, la riga di comando e l'interfaccia HTTP; né hardware né rete esterna.
+175 test automatici si eseguono con `python -m pytest -q tests`. Coprono l'acquisizione, l'indice TF-IDF e BM25, il determinismo, la cache, il manifesto del corpus, input ostili, la riga di comando e l'interfaccia HTTP; né hardware né rete esterna.
 
 La CI esegue `HYDRA_UMC_CI=1 python tools/ci_validate.py`, che controlla il manifesto, i documenti, gli otto README e le immagini.
 

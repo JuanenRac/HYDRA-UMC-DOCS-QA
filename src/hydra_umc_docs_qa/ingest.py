@@ -5,9 +5,10 @@
 # =============================================================================
 """Real Markdown ingestion: splits documents into heading-scoped chunks.
 
-PDF ingestion (mentioned in the README's Key Features) is still future
-work - this v0 pass only ingests Markdown, the format every real README/
-CHANGELOG in this ecosystem is already written in.
+PDF ingestion is off unless the operator turns it on (`--pdf`, or
+`HYDRA_UMC_DOCS_QA_PDF=1`): a PDF is read with `pdf_text.py` (standard library
+only, no OCR) and every page that has text becomes one section titled
+"Page N". Without the switch only Markdown is ever ingested and cited.
 """
 from __future__ import annotations
 
@@ -19,6 +20,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Iterable
 
+from .pdf_text import PdfError, pdf_pages
+
 # Only real Markdown is ever ingested and cited. Without this gate, any
 # `--docs` path a caller supplies (a stray .env, a firmware .bin, an
 # unrelated source file) would be read as plain text and silently quoted
@@ -27,6 +30,32 @@ from typing import Iterable
 # exposed as an API rather than run by hand.
 ALLOWED_SUFFIXES = frozenset({".md", ".markdown"})
 MAX_DOCUMENT_BYTES = 4 * 1024 * 1024
+# a PDF is allowed only when the operator asks for it; manuals are larger than Markdown, so it has its own limit
+PDF_SUFFIX = ".pdf"
+MAX_PDF_BYTES = 32 * 1024 * 1024
+PDF_ENV = "HYDRA_UMC_DOCS_QA_PDF"
+_pdf_switch: bool | None = None
+
+
+def set_pdf_enabled(on: bool | None) -> None:
+    """Turn PDF ingestion on or off for this process (None goes back to the environment variable)."""
+    global _pdf_switch
+    _pdf_switch = on
+
+
+def pdf_enabled() -> bool:
+    if _pdf_switch is not None:
+        return _pdf_switch
+    return os.environ.get(PDF_ENV, "") == "1"
+
+
+def allowed_suffixes() -> frozenset[str]:
+    """The extensions that are ingested right now: Markdown, and PDF when it has been turned on."""
+    return ALLOWED_SUFFIXES | {PDF_SUFFIX} if pdf_enabled() else ALLOWED_SUFFIXES
+
+
+def _size_limit(path: Path) -> int:
+    return MAX_PDF_BYTES if path.suffix.lower() == PDF_SUFFIX else MAX_DOCUMENT_BYTES
 
 
 @dataclass(frozen=True)
@@ -135,9 +164,24 @@ def canonical_source(path: Path) -> str:
     return path.name
 
 
+def ingest_pdf_bytes(raw: bytes, *, source: str) -> list[DocChunk]:
+    """One section per page of a PDF that has text, titled `Page N` (N is the page number in the document). Raises PdfError when the
+    file has no readable text."""
+    chunks: list[DocChunk] = []
+    for number, text in enumerate(pdf_pages(raw), start=1):
+        text = _CONTROL_CHARS_RE.sub("", text).strip()
+        if text:
+            chunks.append(DocChunk(source=source, heading=f"Page {number}", text=text, index=len(chunks)))
+    return chunks
+
+
 def ingest_markdown_file(path: Path) -> list[DocChunk]:
-    """Ingest one real Markdown file from disk. Every section carries the SHA-256 of the file's bytes (see `DocChunk.citation`)."""
+    """Ingest one real Markdown file from disk (or a PDF, when PDF ingestion is on). Every section carries the SHA-256 of the file's bytes
+    (see `DocChunk.citation`)."""
     raw = path.read_bytes()
+    if path.suffix.lower() == PDF_SUFFIX:
+        digest = hashlib.sha256(raw).hexdigest()
+        return [replace(chunk, sha256=digest) for chunk in ingest_pdf_bytes(raw, source=canonical_source(path))]
     text = _CONTROL_CHARS_RE.sub("", raw.decode("utf-8"))
     digest = hashlib.sha256(raw).hexdigest()
     return [replace(chunk, sha256=digest) for chunk in ingest_markdown_text(text, source=canonical_source(path))]
@@ -180,9 +224,11 @@ class RejectedDocument:
         if self.reason is RejectionReason.MISSING:
             return f"{self.path}: file not found (no source)"
         if self.reason is RejectionReason.TOO_LARGE:
-            return f"{self.path}: exceeds the {MAX_DOCUMENT_BYTES}-byte ingestion limit"
+            return f"{self.path}: exceeds the {_size_limit(self.path)}-byte ingestion limit"
         if self.reason is RejectionReason.SYMLINK:
             return f"{self.path}: is a symbolic link - not followed, so a link cannot expose a file outside the documents"
+        if self.reason is RejectionReason.UNDECODABLE and self.path.suffix.lower() == PDF_SUFFIX:
+            return f"{self.path}: no readable text (encrypted, scanned, or fonts this reader cannot map) - skipped, not indexed as noise"
         if self.reason is RejectionReason.UNDECODABLE:
             return f"{self.path}: not valid UTF-8 - skipped, not ingested as garbled text"
         if self.reason is RejectionReason.OUTSIDE_ROOTS:
@@ -190,7 +236,7 @@ class RejectedDocument:
         if self.reason is RejectionReason.HASH_MISMATCH:
             return f"{self.path}: its SHA-256 is not the one pinned in the corpus manifest - edited since it was approved, so not ingested"
         suffix = self.path.suffix or "(none)"
-        return f"{self.path}: disallowed extension {suffix} - only {', '.join(sorted(ALLOWED_SUFFIXES))} are ingested"
+        return f"{self.path}: disallowed extension {suffix} - only {', '.join(sorted(allowed_suffixes()))} are ingested"
 
 
 def validate_doc_path(path: Path) -> RejectedDocument | None:
@@ -201,9 +247,9 @@ def validate_doc_path(path: Path) -> RejectedDocument | None:
         return RejectedDocument(path=path, reason=RejectionReason.SYMLINK)
     if not path.is_file():
         return RejectedDocument(path=path, reason=RejectionReason.MISSING)
-    if path.suffix.lower() not in ALLOWED_SUFFIXES:
+    if path.suffix.lower() not in allowed_suffixes():
         return RejectedDocument(path=path, reason=RejectionReason.DISALLOWED_EXTENSION)
-    if path.stat().st_size > MAX_DOCUMENT_BYTES:
+    if path.stat().st_size > _size_limit(path):
         return RejectedDocument(path=path, reason=RejectionReason.TOO_LARGE)
     return None
 
@@ -236,6 +282,7 @@ def _walk_markdown_files(root: Path) -> list[Path]:
     number, so a tree from a third party cannot leak files from elsewhere or
     make one scan endless."""
     found: list[Path] = []
+    suffixes = allowed_suffixes()
     root_depth = len(root.parts)
     for current, dirnames, filenames in os.walk(root, followlinks=False):
         current_path = Path(current)
@@ -244,7 +291,7 @@ def _walk_markdown_files(root: Path) -> list[Path]:
         dirnames[:] = sorted(d for d in dirnames if not (current_path / d).is_symlink())
         for name in sorted(filenames):
             candidate = current_path / name
-            if candidate.suffix.lower() in ALLOWED_SUFFIXES and not candidate.is_symlink():
+            if candidate.suffix.lower() in suffixes and not candidate.is_symlink():
                 found.append(candidate)
                 if len(found) >= MAX_EXPANDED_FILES:
                     return sorted(found)
@@ -287,7 +334,7 @@ def ingest_allowed_markdown_files(paths: Iterable[Path]) -> tuple[list[DocChunk]
             continue
         try:
             chunks.extend(ingest_markdown_file(path))
-        except UnicodeDecodeError:
+        except (UnicodeDecodeError, PdfError):
             # Real fix: a single file with invalid UTF-8 or a mixed
             # encoding used to crash read_text() uncaught here, taking
             # down the whole `query`/HTTP request over every OTHER real,

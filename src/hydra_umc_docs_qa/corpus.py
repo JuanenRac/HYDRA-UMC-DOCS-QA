@@ -30,7 +30,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
-from .ingest import ALLOWED_SUFFIXES, RejectedDocument, RejectionReason, _walk_markdown_files
+from .ingest import RejectedDocument, RejectionReason, _walk_markdown_files, allowed_suffixes
 
 MAX_MANIFEST_BYTES = 256 * 1024
 
@@ -135,7 +135,7 @@ def collect(manifest: CorpusManifest) -> tuple[list[Path], list[RejectedDocument
         if pinned.is_symlink() or not pinned.is_file():
             rejected.append(RejectedDocument(path=pinned, reason=RejectionReason.MISSING))
             continue
-        if pinned.suffix.lower() not in ALLOWED_SUFFIXES:
+        if pinned.suffix.lower() not in allowed_suffixes():
             rejected.append(RejectedDocument(path=pinned, reason=RejectionReason.DISALLOWED_EXTENSION))
             continue
         if pinned.resolve() not in {p.resolve() for p in candidates}:

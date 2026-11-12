@@ -212,6 +212,22 @@ wrote corpus-0.3.0.json: release 0.3.0, 2 document(s), 21 section(s), signed, di
 $ hydra-umc-docs-qa serve --bundle corpus-0.3.0.json --bundle-key-file key.txt
 ```
 
+## PDF documents and embedding search (both off by default)
+
+**`--pdf`** (or `HYDRA_UMC_DOCS_QA_PDF=1`), on `query`, `serve` and `bundle`, also ingests `.pdf` files named in `--docs` or found in a directory
+or corpus root. A PDF is read with the standard library alone (`pdf_text.py`): each page that has text becomes one section titled `Page N`, cited as
+`file.pdf#index@sha256` like any other section. It does no OCR, so a scanned page gives nothing; it does not read the font maps, so fonts with custom
+glyph codes give garbled or empty text; an encrypted file is refused. A document with no readable page is reported as `REJECTED ... no readable text`
+instead of being indexed as noise. A PDF may be up to 32 MiB (Markdown: 4 MiB), every decompressed stream is cut at 16 MiB and a document at 2000 pages.
+
+**`--embedder SPEC`**, on `query` and `serve`, adds embedding similarity to the ranking: a section scores its lexical score plus
+`--embedding-weight` (default 0.5) times the cosine similarity between the vector of the question and the vector of the section. A section with no word in
+common with the question is found only when its similarity is at least `--embedding-min-similarity` (default 0.5), and its `coverage` stays 0, so
+`--min-coverage` still treats such an answer as weak. `SPEC` is `builtin:ngram` (hashed character 3-grams: tolerant of typos and word endings, but NOT a
+semantic model) or `module:callable`, a function of your own that maps a list of texts to a list of vectors (for example around a sentence-embedding
+model you installed); this project takes no model dependency, and the callable is imported only when you name it. The vectors are computed when the corpus
+is indexed (again on every reload) and are never stored in the cache or in a bundle.
+
 ## Exit codes
 
 | Code | Meaning |

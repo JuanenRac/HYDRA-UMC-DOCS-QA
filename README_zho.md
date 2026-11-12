@@ -18,7 +18,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Method-RAG%20%2F%20Vector%20Search-orange.svg" alt="Method">
   <img src="https://img.shields.io/badge/Platform-Hailo--10-green.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-137%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-175%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.8-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -35,7 +35,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | 版本 | `0.1.8` |
 | 成熟度 | 可用 |
-| 测试 | 137 (`python -m pytest -q tests`) |
+| 测试 | 175 (`python -m pytest -q tests`) |
 | 技术栈 | Python / TF-IDF lexical retrieval |
 | 目标 | HYDRA-UMC 工作单元的 Raspberry Pi CM5 |
 | 真实硬件 | 不适用：这里的内容不在硬件上运行 |
@@ -51,7 +51,7 @@ GPL-3.0-or-later - see LICENSE
 | 领域 | 状态 | 在这里的含义 |
 |---|---|---|
 | 软件 | 🟡 | 主要用途可用；上面的诚实性检查列出了仍然缺少的内容 |
-| 测试 | 🟢 | 137 项自动测试，每次变更都会运行 |
+| 测试 | 🟢 | 175 项自动测试，每次变更都会运行 |
 | 真实硬件 | 🟢 | 不适用：这里的内容不在硬件上运行 |
 | 接口与协议 | 🟡 | 提供的路由或消息已有文档，并用客户端测试过；尚未被所有客户端使用 |
 | 集成 | 🟡 | 在 CM5 测试台上与其他服务一起运行，其消息遵循 SDK 的共享契约 |
@@ -111,7 +111,7 @@ flowchart LR
 
 ## ✨ 功能
 
-* 🔍 **本地向量搜索（v0）：** 真实的、仅依赖标准库的 TF-IDF 词法检索，作用于本地 Markdown 文档。*（已实现为真实的词法搜索——尚非基于嵌入的语义搜索，PDF 摄取仍是未来的工作；见下方“构建与运行”）*
+* 🔍 **本地向量搜索（v0）：** 真实的、仅依赖标准库的 TF-IDF 词法检索，作用于本地 Markdown 文档。*（已实现为真实的词法搜索——尚非基于嵌入的语义搜索，PDF 摄取和嵌入相似度是可选的，默认关闭；见接下来的两项以及下方“构建与运行”）*
 * 🔒 **真实文档白名单：** 只有真实存在的 `.md`/`.markdown` 文件才会被摄取和引用——任何其他 `--docs` 路径（缺失，或文件类型不被允许）都会被拒绝，并打印出明确、独立的原因，而不是被静默跳过或被当作真实文档静默读取。*（已实现）*
 * 🔗 **可追溯的引用：** 每条结果都会引用 `source#index`——一个稳定的、可消歧的指针，指回被摄取的确切段落，可通过重新解析同一来源以确定的方式复原。*（已实现）*
 * 🎯 **确定性评分：** 排序是语料库和查询文本的纯函数，与解释器逐进程的哈希种子无关。*（已实现）*
@@ -129,6 +129,8 @@ flowchart LR
 * 📦 **按版本的语料：** `bundle --release X` 一次性构建索引，并写成带有每份文档哈希的文件，可选签名（使用密钥文件的 HMAC-SHA256）；`serve --bundle` 加载它，内容或签名不匹配时拒绝（未签名的仅在显式使用 `--allow-unsigned-bundle` 时接受）。`GET /stats` 显示版本。在 CI 中构建以及随镜像交付仍待接入。
 * 🩺 **统一的 `GET /health`，默认关闭：** `serve --health-open`（或 `HYDRA_UMC_DOCS_QA_HEALTH_OPEN=1`）使服务以 `{"status": "ok", "service": ..., "version": ...}` 响应 `GET /health`，家族中每个服务的响应体相同；没有该开关时，该路由像不存在的路由一样返回 `404`。非回环地址的调用方必须出示服务的 bearer 令牌，响应体不含路径、配置或密钥。
 * 🪪 **HYDRA-UMC-SERVER 的身份（默认关闭）：** `serve --identity-key-file 文件`（或 `HYDRA_UMC_DOCS_QA_IDENTITY_KEY_FILE=文件`）会让服务在自己的令牌之外，也接受服务器在登录时签发的已签名令牌：查看者只能读取而不能更改，没有凭据的请求即使在环回地址上也会被拒绝。不开启该开关时一切照旧。
+* 📄 **PDF 摄取（可选，默认关闭）：** `--pdf`（或 `HYDRA_UMC_DOCS_QA_PDF=1`）还会摄取 `.pdf` 文件：每个有文本的页面成为一个标题为 `Page N` 的分段，引用方式与其他分段相同。它只用标准库读取，不做 OCR（扫描页没有结果），不读取字体映射（自定义字形编码会得到乱码或空文本），拒绝加密文件，对没有可读页面的文档会报告而不是把噪声编入索引。*（已实现；用生成的 PDF 测试，未在真实手册上测试）*
+* 🧭 **嵌入相似度（可选，默认关闭）：** `--embedder SPEC` 在排序中加入相似度项（词法得分加上权重乘以问题与分段向量的余弦）。`builtin:ngram` 随项目提供，能容忍拼写错误和词尾变化，但不是语义模型；`module:callable` 接受你自己的函数，例如包装一个你已安装的句子嵌入模型，因为本项目不依赖任何模型。仅凭相似度找到的分段覆盖率保持为 0，因此 `--min-coverage` 仍会把它标为较弱。*（已实现；用内置嵌入器和假模型测试，从未用真实模型测试）*
 
 ## 🔒 安全与防护
 
@@ -212,7 +214,7 @@ Top 1 passage(s) for: "firmware flashing"
 
 ## 🧪 测试
 
-运行 `python -m pytest -q tests` 会执行 137 个自动测试，覆盖导入、TF-IDF 与 BM25 索引、确定性、缓存、语料清单、恶意输入、命令行和 HTTP 接口；不需要硬件和外部网络。
+运行 `python -m pytest -q tests` 会执行 175 个自动测试，覆盖导入、TF-IDF 与 BM25 索引、确定性、缓存、语料清单、恶意输入、命令行和 HTTP 接口；不需要硬件和外部网络。
 
 CI 运行 `HYDRA_UMC_CI=1 python tools/ci_validate.py`，检查清单、文档、八个 README 和图片。
 

@@ -10,7 +10,7 @@ semantic vector search - the README's "Local Vector Search" feature is
 honestly labeled v0 for exactly that reason. It needs no ML dependency,
 runs anywhere Python does, and gives this project a real, testable
 retrieval kernel a future embedding-based index can be swapped in behind
-the same `search()` contract.
+the same `search()` contract; embeddings.py is that swap, off unless asked for.
 """
 from __future__ import annotations
 
@@ -121,6 +121,8 @@ class TfidfIndex:
     term_counts: tuple[dict[str, int], ...] = ()
     average_length: float = 0.0
     document_frequency: dict[str, int] = field(default_factory=dict)
+    # vectors of the sections when embedding search is on (see embeddings.py); never saved in the cache or in a bundle
+    semantic: object | None = field(default=None, repr=False, compare=False)
 
 
 def _term_frequencies(tokens: list[str]) -> dict[str, float]:
@@ -242,6 +244,10 @@ def search(index: TfidfIndex, query: str, *, top_k: int = 5) -> list[SearchResul
             for chunk, vector in zip(index.chunks, index.chunk_vectors, strict=True)
         ]
     results = [result for result in results if result.score > 0.0]
+    if index.semantic is not None:
+        from .embeddings import semantic_search  # embeddings.py imports this module, so it is loaded only when it is on
+
+        return semantic_search(index, results, query, top_k)
     results.sort(key=lambda result: result.score, reverse=True)
     return results[:top_k]
 

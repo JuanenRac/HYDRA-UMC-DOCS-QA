@@ -30,7 +30,9 @@ from .corpus import CorpusError, collect, load_manifest
 from .cache import compute_cache_key, load_cached_index, save_cached_index
 from .extract import best_sentence
 from .highlight import highlight_terms
-from .ingest import RejectedDocument, RejectionReason, ingest_markdown_file, partition_allowed_paths
+from .ingest import RejectedDocument, RejectionReason, ingest_markdown_file, partition_allowed_paths, set_pdf_enabled
+from .embeddings import DEFAULT_MIN_SIMILARITY, DEFAULT_WEIGHT, EmbeddingError, attach_embeddings, load_embedder
+from .pdf_text import PdfError
 from .index import build_index, search
 
 PROJECT_NAME = "HYDRA-UMC-DOCS-QA"
@@ -63,6 +65,7 @@ def _run_query(
     stem: bool = False,
     heading_boost: int = 1,
     extractive: bool = False,
+    embedding: tuple[str, float, float] | None = None,
 ) -> int:
     if corpus is not None:
         # the documents come from the manifest (roots, exclusions, pins); the disk cache is for the plain --docs index only
@@ -93,7 +96,7 @@ def _run_query(
         for path in valid_paths:
             try:
                 chunks.extend(ingest_markdown_file(path))
-            except UnicodeDecodeError:
+            except (UnicodeDecodeError, PdfError):
                 undecodable.append(RejectedDocument(path=path, reason=RejectionReason.UNDECODABLE))
         index = build_index(chunks, scorer=scorer, stem=stem, heading_boost=heading_boost)
         if use_cache:
@@ -101,6 +104,10 @@ def _run_query(
 
     for doc in undecodable:
         print(f"REJECTED {doc.describe()}")
+
+    if embedding is not None and index.chunks:
+        spec, weight, minimum = embedding
+        index = attach_embeddings(index, load_embedder(spec), weight=weight, min_similarity=minimum)
 
     if not index.chunks:
         print("No documents ingested - check the --docs paths.")
@@ -152,6 +159,7 @@ def _run_serve(
     bundle_key_file: Path | None = None,
     allow_unsigned_bundle: bool = False,
     identity_key_file: str | None = None,
+    embedding: tuple[str, float, float] | None = None,
 ) -> int:
     try:
         token = load_token(token_file)
@@ -177,8 +185,22 @@ def _run_serve(
         else:
             def loader():
                 return build_server_index(docs, **options)
+        if embedding is not None:
+            spec, weight, minimum = embedding
+            embedder = load_embedder(spec)
+            plain_loader = loader
+
+            def loader():  # the vectors are made again on every reload, from the sections it brings
+                found, sources, refused = plain_loader()
+                if found is not None and found.chunks:
+                    found = attach_embeddings(found, embedder, weight=weight, min_similarity=minimum)
+                return found, sources, refused
+
+            for name in ("release", "signed"):
+                if hasattr(plain_loader, name):
+                    setattr(loader, name, getattr(plain_loader, name))
         index, ingested_sources, rejected_descriptions = loader()
-    except (ValueError, CorpusError, BundleError) as exc:
+    except (ValueError, CorpusError, BundleError, EmbeddingError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     for description in rejected_descriptions:
@@ -220,9 +242,33 @@ def _add_retrieval_options(parser: argparse.ArgumentParser) -> None:
         "--corpus", type=Path, default=None,
         help="Corpus manifest (JSON: roots, exclude patterns, pinned documents with their SHA-256; see corpus.py) instead of --docs.",
     )
+    parser.add_argument(
+        "--pdf", action="store_true",
+        help="Also ingest .pdf documents (one section per page that has text; stdlib reader, no OCR, encrypted files refused). Off by default, or set HYDRA_UMC_DOCS_QA_PDF=1.",
+    )
     parser.add_argument("--scorer", choices=("tfidf", "bm25"), default="tfidf", help="Ranking: cosine over TF-IDF (default) or BM25.")
     parser.add_argument("--stem", action="store_true", help="Strip the common endings of a word before indexing and looking it up.")
     parser.add_argument("--heading-boost", type=int, default=1, dest="heading_boost", help="Index the words of a section's heading, repeated this many times minus one (1 to 10; default 1: headings are not indexed).")
+
+
+def _add_embedding_options(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--embedder", default=None, metavar="SPEC",
+        help="Add embedding similarity to the ranking: builtin:ngram (hashed character 3-grams, typo-tolerant, not a semantic model) or module:callable "
+        "(your own function from texts to vectors, e.g. around a sentence-embedding model). Off by default.",
+    )
+    parser.add_argument(
+        "--embedding-weight", type=float, default=DEFAULT_WEIGHT, dest="embedding_weight",
+        help=f"A section scores its lexical score plus this weight times its cosine similarity (default {DEFAULT_WEIGHT}).",
+    )
+    parser.add_argument(
+        "--embedding-min-similarity", type=float, default=DEFAULT_MIN_SIMILARITY, dest="embedding_min_similarity",
+        help=f"A section with no word in common with the question is found only above this similarity (default {DEFAULT_MIN_SIMILARITY}).",
+    )
+
+
+def _embedding_from(args: argparse.Namespace) -> tuple[str, float, float] | None:
+    return None if args.embedder is None else (args.embedder, args.embedding_weight, args.embedding_min_similarity)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -249,6 +295,7 @@ def build_parser() -> argparse.ArgumentParser:
         help="Print the sentence of each passage that best answers the question instead of the first characters of the passage.",
     )
     _add_retrieval_options(query_parser)
+    _add_embedding_options(query_parser)
 
     serve_parser = subparsers.add_parser(
         "serve",
@@ -260,6 +307,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve_parser.add_argument("--health-open", action="store_true", help="answer GET /health (open to loopback, to other callers only with the bearer token); closed by default, or set HYDRA_UMC_DOCS_QA_HEALTH_OPEN=1")
     serve_parser.add_argument("--port", type=int, default=8110, help="port for the HTTP API")
     _add_retrieval_options(serve_parser)
+    _add_embedding_options(serve_parser)
     serve_parser.add_argument("--identity-key-file", default=None, dest="identity_key_file", help="file with the signing key of HYDRA-UMC-SERVER (its JWT_SECRET): a valid token of the SERVER is then accepted, every route (GET /health and GET /stats too) demands an identity and a viewer may read but not change (off by default; or set HYDRA_UMC_DOCS_QA_IDENTITY_KEY_FILE)")
     serve_parser.add_argument(
         "--token-file", default=None, dest="token_file",
@@ -357,12 +405,14 @@ def main(argv: list[str] | None = None) -> int:
 
     parser = build_parser()
     args = parser.parse_args(argv)
+    # the switch belongs to this run only: a flag turns it on, otherwise the environment decides
+    set_pdf_enabled(True if getattr(args, "pdf", False) else None)
 
     if args.command == "query":
         docs = args.docs if args.docs is not None else list(_DEFAULT_DOCS)
         try:
-            return _run_query(args.question, docs, args.top_k, corpus=args.corpus, scorer=args.scorer, stem=args.stem, heading_boost=args.heading_boost, extractive=args.extractive)
-        except ValueError as exc:
+            return _run_query(args.question, docs, args.top_k, corpus=args.corpus, scorer=args.scorer, stem=args.stem, heading_boost=args.heading_boost, extractive=args.extractive, embedding=_embedding_from(args))
+        except (ValueError, EmbeddingError) as exc:
             print(f"ERROR: {exc}")
             return 2
     if args.command == "serve":
@@ -372,6 +422,7 @@ def main(argv: list[str] | None = None) -> int:
             token_file=args.token_file, min_score=args.min_score, min_coverage=args.min_coverage,
             bundle=args.bundle, bundle_key_file=args.bundle_key_file, allow_unsigned_bundle=args.allow_unsigned_bundle,
             health_open=args.health_open, identity_key_file=args.identity_key_file,
+            embedding=_embedding_from(args),
         )
     if args.command == "catalog":
         return _run_catalog(args)

@@ -18,7 +18,7 @@ GPL-3.0-or-later - see LICENSE
   <img src="https://img.shields.io/badge/License-GPL%203.0--or--later-blue.svg" alt="GPL 3.0 or later">
   <img src="https://img.shields.io/badge/Method-RAG%20%2F%20Vector%20Search-orange.svg" alt="Method">
   <img src="https://img.shields.io/badge/Platform-Hailo--10-green.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Tests-137%20passing-2ea44f.svg" alt="Tests">
+  <img src="https://img.shields.io/badge/Tests-175%20passing-2ea44f.svg" alt="Tests">
   <img src="https://img.shields.io/badge/Version-0.1.8-0f6cbd.svg" alt="Version">
   <img src="https://img.shields.io/badge/Maturity-functional-0F6CBD.svg" alt="Maturity">
 </p>
@@ -35,7 +35,7 @@ GPL-3.0-or-later - see LICENSE
 |---|---|
 | Version | `0.1.8` |
 | Maturity | Functional |
-| Tests | 137 (`python -m pytest -q tests`) |
+| Tests | 175 (`python -m pytest -q tests`) |
 | Stack | Python / TF-IDF lexical retrieval |
 | Target | The Raspberry Pi CM5 of a HYDRA-UMC cell |
 | On real hardware | Not applicable: nothing here runs on hardware |
@@ -51,7 +51,7 @@ Each line is one part of this repository and the light says how far it is today.
 | Area | State | What it means here |
 |---|---|---|
 | Software | 🟡 | Works for its main purpose; the honesty check above lists what is still missing |
-| Tests | 🟢 | 137 automated tests, run on every change |
+| Tests | 🟢 | 175 automated tests, run on every change |
 | Real hardware | 🟢 | Not applicable: nothing here runs on hardware |
 | Interface and protocols | 🟡 | The routes or messages it offers are documented and tested with a client; not every client has used them yet |
 | Integration | 🟡 | It runs together with the other services on the CM5 test bench and its messages follow the shared contracts of the SDK |
@@ -157,7 +157,7 @@ service into `docker-compose.yml` alongside its three siblings
 
 ## ✨ Features
 
-* 🔍 **Local Vector Search (v0):** Real, stdlib-only TF-IDF lexical retrieval over local Markdown docs. *(implemented as real lexical search - not yet embedding-based semantic search, and PDF ingestion is still future work; see Build & Release below)*
+* 🔍 **Local Vector Search (v0):** Real, stdlib-only TF-IDF lexical retrieval over local Markdown docs. *(implemented as real lexical search - not yet embedding-based semantic search, and PDF ingestion and embedding similarity are optional and off by default; see the next two bullets and BUILD & RUN below)*
 * 🔒 **Real document allowlist:** only existing `.md`/`.markdown` files are ever ingested and cited - every other `--docs` path (missing, or a disallowed file type) is rejected with a distinct, printed reason instead of being silently skipped or silently read as if it were real documentation. *(implemented)*
 * 🔗 **Traceable citations:** every result cites `source#index` - a stable, disambiguating pointer back to the exact ingested passage, deterministically recoverable by re-parsing the same source. *(implemented)*
 * 🎯 **Deterministic scoring:** ranking is a pure function of the corpus and query text, independent of the interpreter's per-process hash seed. *(implemented)*
@@ -178,6 +178,8 @@ service into `docker-compose.yml` alongside its three siblings
 * 📦 **Corpus per release:** `bundle --release X` builds the index once and writes it as a file with the hash of every document, optionally signed (HMAC-SHA256 with a key file); `serve --bundle` loads it and refuses it when the content or the signature does not match (an unsigned one only with the explicit `--allow-unsigned-bundle`). `GET /stats` shows the release. Building it in the CI and delivering it with the image are still to be wired.
 * 🩺 **A uniform `GET /health`, closed by default:** `serve --health-open` (or `HYDRA_UMC_DOCS_QA_HEALTH_OPEN=1`) makes the service answer `GET /health` with `{"status": "ok", "service": ..., "version": ...}`, the same body in every service of the family; without the switch the route answers `404` like a route that does not exist. A caller that is not on loopback must present the bearer token of the service, and the body carries no path, configuration or secret.
 * 🪪 **The identity of HYDRA-UMC-SERVER, off by default:** `serve --identity-key-file FILE` (or `HYDRA_UMC_DOCS_QA_IDENTITY_KEY_FILE=FILE`) makes the service accept the signed token that the server issues at login, next to its own token: a viewer may read but not change, and a request with no credential is refused even on loopback. Without the switch nothing changes.
+* 📄 **PDF ingestion (optional, off by default):** `--pdf` (or `HYDRA_UMC_DOCS_QA_PDF=1`) also ingests `.pdf` files: each page with text becomes one section titled `Page N`, cited like any other. It is read with the standard library alone, does no OCR (a scanned page gives nothing), does not read font maps (custom glyph codes give garbled or empty text), refuses encrypted files and reports a document with no readable page instead of indexing noise. *(implemented; tested on generated PDFs, not on a corpus of real manuals)*
+* 🧭 **Embedding similarity (optional, off by default):** `--embedder SPEC` adds a similarity term to the ranking (lexical score plus a weight times the cosine of the vectors of the question and the section). `builtin:ngram` ships with the project and tolerates typos and word endings but is NOT a semantic model; `module:callable` takes a function of your own, for example around a sentence-embedding model you installed, because this project takes no model dependency. A section found by similarity alone keeps coverage 0, so `--min-coverage` still flags it as weak. *(implemented; tested with the built-in embedder and a fake model, never with a real one)*
 
 ## 🔒 Security & Safety
 
@@ -265,7 +267,7 @@ The same search is also reachable as a long-running JSON/HTTP API via `./run.sh 
 
 ## 🧪 Testing
 
-137 automated tests run with `python -m pytest -q tests`. They cover ingestion, the TF-IDF and BM25 index, determinism, the cache, the corpus manifest, hostile inputs, the command line and the HTTP surface; no hardware and no outside network.
+175 automated tests run with `python -m pytest -q tests`. They cover ingestion, the TF-IDF and BM25 index, determinism, the cache, the corpus manifest, hostile inputs, the command line and the HTTP surface; no hardware and no outside network.
 
 The CI runs `HYDRA_UMC_CI=1 python tools/ci_validate.py`, which checks the manifest, the documents, the eight READMEs and the pictures.
 
