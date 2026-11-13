@@ -11,12 +11,12 @@
   ],
   "deployment_target": "cm5",
   "maturity": "functional",
-  "evidence": "none",
+  "evidence": "host-test",
   "hardware_bound": false,
   "family": "Cognitive AI Node",
   "parent": "HYDRA-UMC-COGNITIVE-NODE",
   "build": "python tools/build_test.py",
-  "notes": "Real v0 lexical retrieval: stdlib-only TF-IDF search (query subcommand) over ingested Markdown, defaulting to this repo's own README/CHANGELOG. Deterministic scoring (hash-seed-independent summation), traceable source#index citations, and a real document allowlist (only existing .md/.markdown paths are ingested; every other path is rejected with a distinct reason instead of being silently skipped or silently read as text). Honestly lexical, not yet embedding-based semantic search, and no LLM synthesis step - that and PDF ingestion are future work.",
+  "notes": "Real v0 lexical retrieval: stdlib-only TF-IDF search (query subcommand) over ingested Markdown, defaulting to this repo's own README/CHANGELOG. Deterministic scoring (hash-seed-independent summation), traceable source#index citations, and a real document allowlist (only existing .md/.markdown paths are ingested; every other path is rejected with a distinct reason instead of being silently skipped or silently read as text). Honestly lexical, not yet embedding-based semantic search, and no LLM synthesis step - that and PDF ingestion are future work. Evidence is host-test: the automated test suite runs in CI on the host; nothing here has run against a simulator bench or real hardware.",
   "native_version": {
     "file": "pyproject.toml",
     "pattern": "^version\\s*=\\s*\"(\\d+)\\.(\\d+)\\.(\\d+)\""
