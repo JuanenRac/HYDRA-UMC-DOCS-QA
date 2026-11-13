@@ -8,13 +8,13 @@ captured from a real run of the installed CLI — not written from memory.
 
 ```
 $ hydra-umc-docs-qa -h
-usage: hydra-umc-docs-qa [-h] {query,serve,catalog,bundle} ...
+usage: hydra-umc-docs-qa [-h] {query,serve,verify-bundle,catalog,bundle} ...
 
 Docs-QA (Hailo-10) - retrieval-augmented technical assistant grounded in the
 ecosystem's own documentation.
 
 positional arguments:
-  {query,serve,catalog,bundle}
+  {query,serve,verify-bundle,catalog,bundle}
     query        Real TF-IDF lexical search over ingested Markdown docs.
     serve        Run 'query' as a JSON/HTTP API (GET /query?q=...&top_k=N) -
                  unlike the CLI, which re-ingests and re-indexes the corpus
@@ -210,6 +210,23 @@ Builds the index once and writes it as one file for a release: the release name,
 $ hydra-umc-docs-qa bundle --release 0.3.0 --docs corpus/ --key-file key.txt --out corpus-0.3.0.json
 wrote corpus-0.3.0.json: release 0.3.0, 2 document(s), 21 section(s), signed, digest 5d0f...
 $ hydra-umc-docs-qa serve --bundle corpus-0.3.0.json --bundle-key-file key.txt
+```
+
+### Release signature of a bundle (Ed25519, public key only)
+
+A bundle built in CI is published unsigned; the release step signs it with the release key, which never leaves the machine that signs releases, and writes `FILE.sha256` and `FILE.sig` next to it (the `sha256sum` line and the base64 Ed25519 signature of the exact bytes of the file, the format of every signed release asset of the family). The service holds the public key only:
+
+- `serve --bundle FILE --bundle-public-key KEY` (or `HYDRA_UMC_DOCS_QA_BUNDLE_PUBLIC_KEY`) checks both files against the bytes it loads, before it parses them. `KEY` is 64 hexadecimal characters, or a file with them, or an Ed25519 PEM. With a key the release signature is always required: a missing, altered or foreign signature refuses the bundle, `--allow-unsigned-bundle` notwithstanding.
+- Only a signed corpus is loaded by default. `HYDRA_UMC_DOCS_QA_REQUIRE_SIGNED_CORPUS=0` is the same switch as `--allow-unsigned-bundle` and applies to bundles checked without a public key.
+- `serve --bundle FILE --bundle-fallback-local --docs ...` (or `--corpus`): when the bundle is refused at startup, the service prints a `WARNING`, indexes those local documents and shows `bundleSigned: false` in `GET /stats`. Off by default; a reload that fails keeps the index already loaded.
+- `verify-bundle FILE --public-key KEY` prints `VERIFY=PASS` or `VERIFY=FAIL reason` (exit status 0 or 1) without starting a service.
+
+The index is the same bytes for the same documents and release in any directory and under any hash seed, so the bundle can be built twice in CI and compared.
+
+```
+$ hydra-umc-docs-qa verify-bundle corpus-0.3.0.json --public-key d75a98...11a
+VERIFY=PASS release 0.3.0, 40 document(s), signed with the trusted release key
+$ hydra-umc-docs-qa serve --bundle corpus-0.3.0.json --bundle-public-key d75a98...11a
 ```
 
 ## PDF documents and embedding search (both off by default)

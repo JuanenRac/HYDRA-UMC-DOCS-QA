@@ -14,6 +14,7 @@ the Hailo-10 LLM synthesis step the README's own roadmap describes.
 from __future__ import annotations
 
 import argparse
+import os
 import signal
 import sys
 from typing import Any
@@ -24,7 +25,8 @@ from .health_route import health_open_requested
 from .server_identity import identity_key_from
 from .access import bind_problem, load_token
 from .api import BundleLoader, DocsQaServer, build_corpus_index, build_server_index
-from .bundle import BundleError, build_bundle, read_key
+from .bundle import BundleError, build_bundle, load_bundle, read_key
+from .corpus_signature import SignatureError, read_public_key
 from .catalog import CatalogError, build_catalog
 from .corpus import CorpusError, collect, load_manifest
 from .cache import compute_cache_key, load_cached_index, save_cached_index
@@ -48,6 +50,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _DEFAULT_DOCS = (_REPO_ROOT / "README.md", _REPO_ROOT / "CHANGELOG.md")
 
 _SNIPPET_LEN = 160
+REQUIRE_SIGNED_ENV = "HYDRA_UMC_DOCS_QA_REQUIRE_SIGNED_CORPUS"
+PUBLIC_KEY_ENV = "HYDRA_UMC_DOCS_QA_BUNDLE_PUBLIC_KEY"
 
 
 def _print_identity() -> None:
@@ -158,6 +162,8 @@ def _run_serve(
     bundle: Path | None = None,
     bundle_key_file: Path | None = None,
     allow_unsigned_bundle: bool = False,
+    bundle_public_key: str | None = None,
+    bundle_fallback_local: bool = False,
     identity_key_file: str | None = None,
     embedding: tuple[str, float, float] | None = None,
 ) -> int:
@@ -173,7 +179,17 @@ def _run_serve(
         options = {"scorer": scorer, "stem": stem, "heading_boost": heading_boost}
         loader: Any
         if bundle is not None:
-            loader = BundleLoader(bundle, read_key(bundle_key_file) if bundle_key_file else None, allow_unsigned_bundle)
+            public = read_public_key(bundle_public_key) if bundle_public_key else None
+            bundle_loader = BundleLoader(bundle, read_key(bundle_key_file) if bundle_key_file else None, allow_unsigned_bundle, public)
+            loader = bundle_loader
+            if bundle_fallback_local:
+                try:
+                    bundle_loader()
+                except BundleError as exc:
+                    print(f"WARNING: the corpus bundle was refused ({exc}); indexing the local documents instead, so the answers are NOT from the signed corpus")
+                    bundle = None
+        if bundle is not None:
+            pass
         elif corpus is not None:
             manifest = load_manifest(corpus)
 
@@ -200,7 +216,7 @@ def _run_serve(
                 if hasattr(plain_loader, name):
                     setattr(loader, name, getattr(plain_loader, name))
         index, ingested_sources, rejected_descriptions = loader()
-    except (ValueError, CorpusError, BundleError, EmbeddingError) as exc:
+    except (ValueError, CorpusError, BundleError, SignatureError, EmbeddingError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     for description in rejected_descriptions:
@@ -332,7 +348,17 @@ def build_parser() -> argparse.ArgumentParser:
     )
     serve_parser.add_argument(
         "--allow-unsigned-bundle", action="store_true", dest="allow_unsigned_bundle",
-        help="Accept a bundle whose signature cannot be checked (unsigned, or no key given). Off by default: the bundle is refused.",
+        help="Accept a bundle whose signature cannot be checked (unsigned, or no key given). Off by default: the bundle is refused. "
+             "HYDRA_UMC_DOCS_QA_REQUIRE_SIGNED_CORPUS=0 does the same; with --bundle-public-key the release signature is always required.",
+    )
+    serve_parser.add_argument(
+        "--bundle-public-key", default=None, dest="bundle_public_key",
+        help="Public key (64 hexadecimal characters, or a file with them or a PEM) of the release signature of the bundle: FILE.sha256 and FILE.sig "
+             "must verify over its exact bytes before it is loaded (or set HYDRA_UMC_DOCS_QA_BUNDLE_PUBLIC_KEY). The service never holds a private key.",
+    )
+    serve_parser.add_argument(
+        "--bundle-fallback-local", action="store_true", dest="bundle_fallback_local",
+        help="With --bundle and --docs/--corpus: when the bundle is refused at startup, say so in a WARNING and index those local documents instead of stopping. Off by default.",
     )
     serve_parser.add_argument(
         "--docs",
@@ -342,6 +368,12 @@ def build_parser() -> argparse.ArgumentParser:
         help="Markdown files or directories to ingest at startup (directories are "
              "searched recursively; default: this repo's own README.md/CHANGELOG.md).",
     )
+
+    verify_parser = subparsers.add_parser(
+        "verify-bundle", help="Check the release signature of a corpus bundle (FILE.sha256 and FILE.sig) against a public key, without loading it into a service."
+    )
+    verify_parser.add_argument("bundle", type=Path, help="The bundle file.")
+    verify_parser.add_argument("--public-key", required=True, dest="public_key", help="64 hexadecimal characters, or a file with them or an Ed25519 PEM.")
 
     catalog_parser = subparsers.add_parser(
         "catalog", help="Write the error codes of the controller and the URTC tool profiles as documents the assistant can index and cite."
@@ -394,6 +426,16 @@ def _run_bundle(args: argparse.Namespace) -> int:
     return 0
 
 
+def _run_verify_bundle(args: argparse.Namespace) -> int:
+    try:
+        loaded = load_bundle(args.bundle, public_key=read_public_key(args.public_key))
+    except (BundleError, SignatureError) as exc:
+        print(f"VERIFY=FAIL {exc}")
+        return 1
+    print(f"VERIFY=PASS release {loaded.release}, {len(loaded.documents)} document(s), signed with the trusted release key")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     # Real ingested Markdown (this ecosystem's own READMEs) is full of
     # emoji - the default Windows console codepage (cp1252) can't encode
@@ -420,7 +462,10 @@ def main(argv: list[str] | None = None) -> int:
         return _run_serve(
             args.addr, args.port, docs, corpus=args.corpus, scorer=args.scorer, stem=args.stem, heading_boost=args.heading_boost,
             token_file=args.token_file, min_score=args.min_score, min_coverage=args.min_coverage,
-            bundle=args.bundle, bundle_key_file=args.bundle_key_file, allow_unsigned_bundle=args.allow_unsigned_bundle,
+            bundle=args.bundle, bundle_key_file=args.bundle_key_file,
+            allow_unsigned_bundle=args.allow_unsigned_bundle or os.environ.get(REQUIRE_SIGNED_ENV, "").strip().lower() in ("0", "false", "no", "off"),
+            bundle_public_key=args.bundle_public_key or os.environ.get(PUBLIC_KEY_ENV) or None,
+            bundle_fallback_local=args.bundle_fallback_local and (args.docs is not None or args.corpus is not None),
             health_open=args.health_open, identity_key_file=args.identity_key_file,
             embedding=_embedding_from(args),
         )
@@ -428,6 +473,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_catalog(args)
     if args.command == "bundle":
         return _run_bundle(args)
+    if args.command == "verify-bundle":
+        return _run_verify_bundle(args)
 
     _print_identity()
     return 0
