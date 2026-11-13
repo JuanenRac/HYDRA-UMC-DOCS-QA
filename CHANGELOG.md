@@ -2,6 +2,10 @@
 
 All notable changes to this project are documented here.
 
+## [Unreleased]
+
+- **More tests of the signed-token check and of the service under failures, and a simulation bench with a coverage floor:** `tests/test_server_identity_edges.py` (44 tests) goes through every refusal of the signed-token check (missing, oversized, mangled, wrong algorithm, wrong key, changed after signing, expired, not yet valid, issued in the future, no user, unknown role), the decision on a request for every method and role, the health probe against a real loopback socket and a seeded set of damaged tokens that must never be accepted. `tests/test_api_failure_modes.py` (24 tests) puts a real service through bad parameters, a service with nothing indexed, reloads that fail or find nothing (the old index stays), queries answered while reloads happen, the token and identity gates and what `/stats` must not reveal. The new workflow "Simulation bench" runs them on their own and a job measures the coverage with a floor that must not go down.
+
 ## [0.1.9] - PDF documents, embedding similarity and more tests
 
 - **Tests of what `serve`, `bundle` and `catalog` refuse:** 12 new tests (an address away from loopback without a token, a missing token file, thresholds out of range, a missing bundle or corpus manifest, a bundle signed and unsigned, nothing to index, a missing key or protocol file); no behaviour changes.
