@@ -1,0 +1,59 @@
+# =============================================================================
+# HYDRA-UMC-DOCS-QA - Simulation bench and coverage floor
+# Copyright (C) 2026 JuanenRac (Electro Hobby 3D) <electrohobby3d@gmail.com>
+# GPL-3.0-or-later - see LICENSE
+#
+# Runs the real service on a loopback port against what goes wrong around it: documents that change or vanish while it runs, reloads that fail or
+# find nothing, bad parameters, tokens of the wrong kind and clients that hammer it from several threads. Nothing leaves the runner. A second job
+# measures the coverage of the program with a floor that must not go down. It runs on every push and pull request and by hand.
+# =============================================================================
+name: Simulation bench
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulation:
+    name: Service against failures
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Install the program and its test dependencies
+        run: python -m pip install -e ".[dev]"
+      - name: Run the failure scenarios
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: python -m pytest -q tests/test_api_failure_modes.py tests/test_server_identity_edges.py tests/test_api.py tests/test_hardening.py
+
+  coverage:
+    name: Coverage floor of the program
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Install the program and its test dependencies
+        run: python -m pip install -e ".[dev]" coverage==7.17.0
+      - name: Measure the coverage
+        run: |
+          python -m coverage run --source=src -m pytest tests -q
+          python -m coverage report -m --fail-under=90
