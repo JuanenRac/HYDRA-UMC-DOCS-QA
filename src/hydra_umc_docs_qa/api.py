@@ -58,13 +58,13 @@ def build_corpus_index(
 class BundleLoader:
     """Loads the index from a corpus bundle (bundle.py); called again on a reload, which also picks up the release of the new file."""
 
-    def __init__(self, path: Path, key: bytes | None, allow_unsigned: bool) -> None:
-        self.path, self.key, self.allow_unsigned = path, key, allow_unsigned
+    def __init__(self, path: Path, key: bytes | None, allow_unsigned: bool, public_key: bytes | None = None) -> None:
+        self.path, self.key, self.allow_unsigned, self.public_key = path, key, allow_unsigned, public_key
         self.release: str | None = None
         self.signed = False
 
     def __call__(self) -> tuple[TfidfIndex | None, list[str], list[str]]:
-        loaded = load_bundle(self.path, key=self.key, allow_unsigned=self.allow_unsigned)
+        loaded = load_bundle(self.path, key=self.key, allow_unsigned=self.allow_unsigned, public_key=self.public_key)
         self.release, self.signed = loaded.release, loaded.signed
         return loaded.index, sorted({source for source, _ in loaded.documents}), []
 

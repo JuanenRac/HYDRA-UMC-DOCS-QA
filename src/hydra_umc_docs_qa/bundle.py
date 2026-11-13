@@ -27,6 +27,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from .corpus_signature import SignatureError, verify_detached
 from .cache import _index_from_json, _index_to_json
 from .index import TfidfIndex
 
@@ -116,14 +117,25 @@ def build_bundle(index: TfidfIndex, release: str, out: Path, *, key: bytes | Non
     return {"release": release, "documents": len(documents), "chunks": len(index.chunks), "digest": digest, "signed": signature is not None}
 
 
-def load_bundle(path: str | Path, *, key: bytes | None = None, allow_unsigned: bool = False) -> LoadedBundle:
+def load_bundle(
+    path: str | Path, *, key: bytes | None = None, allow_unsigned: bool = False, public_key: bytes | None = None
+) -> LoadedBundle:
     """Reads and checks a bundle. The digest must match; the signature must match `key`, unless `allow_unsigned` says the service accepts
-    a bundle without a checked signature (an unsigned one, or one when no key was given)."""
+    a bundle without a checked signature (an unsigned one, or one when no key was given).
+
+    With `public_key` (32 bytes) the release signature is required first: `FILE.sha256` and `FILE.sig` must verify over the exact bytes read here,
+    otherwise the bundle is refused whatever `allow_unsigned` says (a key that was given is never skipped)."""
     target = Path(path)
     try:
         if target.stat().st_size > MAX_BUNDLE_BYTES:
             raise BundleError("the bundle is too large")
-        data = json.loads(target.read_bytes().decode("utf-8"))
+        raw = target.read_bytes()
+        if public_key is not None:
+            try:
+                verify_detached(target, public_key, raw)
+            except SignatureError as error:
+                raise BundleError(str(error)) from error
+        data = json.loads(raw.decode("utf-8"))
     except OSError as error:
         raise BundleError(f"cannot read the bundle: {error}") from error
     except (UnicodeDecodeError, ValueError) as error:
@@ -134,8 +146,10 @@ def load_bundle(path: str | Path, *, key: bytes | None = None, allow_unsigned: b
     body = {k: v for k, v in data.items() if k not in ("digest", "signature")}
     if not isinstance(digest, str) or not hmac.compare_digest(hashlib.sha256(_canonical(body)).hexdigest(), digest):
         raise BundleError("the digest of the bundle does not match its content: it was changed after it was built")
-    checked = False
-    if key is not None and isinstance(signature, str):
+    checked = public_key is not None
+    if public_key is not None:
+        pass  # the release signature already vouched for these exact bytes (and so for the digest inside them)
+    elif key is not None and isinstance(signature, str):
         expected = hmac.new(key, digest.encode("ascii"), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected, signature):
             raise BundleError("the signature of the bundle does not match the key")
