@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here.
 
-## [Unreleased]
+## [0.1.9] - PDF documents, embedding similarity and more tests
 
 - **Tests of what `serve`, `bundle` and `catalog` refuse:** 12 new tests (an address away from loopback without a token, a missing token file, thresholds out of range, a missing bundle or corpus manifest, a bundle signed and unsigned, nothing to index, a missing key or protocol file); no behaviour changes.
 - **Tests of the bearer-token module:** 17 new tests of `access.py` (loopback names and addresses, the token sources and their boundary length, the bind rule, malformed credentials, a non-ASCII credential and the 401 answer); no behaviour changes.
