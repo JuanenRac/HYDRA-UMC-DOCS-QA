@@ -76,8 +76,8 @@ def test_ingest_markdown_files_skips_missing_paths(tmp_path: Path) -> None:
 
 def test_heading_like_lines_inside_a_fenced_code_block_do_not_split_the_section() -> None:
     # a real
-    # "# Shell comment" line inside a ```sh fence used to be read as a
-    # genuine heading, wrongly splitting the Install section around it.
+    # "# Shell comment" line inside a ```sh fence must not be read as a
+    # genuine heading, which would wrongly split the Install section around it.
     text = (
         "## Install\n"
         "Run this:\n"
