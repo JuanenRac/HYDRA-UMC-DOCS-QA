@@ -4,6 +4,9 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+
+## [0.2.0]
+
 - **Comments describe what the code does, not what it used to do:** docstrings and notes in the source and the tests say the present behaviour and the reason for it. Comments only: no behaviour changes.
 - **The SDK pin and the shared tools are up to date:** the SDK dependency names the newest release tag, and the shared tools are the canonical copies again.
 - **More tests of the signed-token check and of the service under failures, and a simulation bench with a coverage floor:** `tests/test_server_identity_edges.py` (44 tests) goes through every refusal of the signed-token check (missing, oversized, mangled, wrong algorithm, wrong key, changed after signing, expired, not yet valid, issued in the future, no user, unknown role), the decision on a request for every method and role, the health probe against a real loopback socket and a seeded set of damaged tokens that must never be accepted. `tests/test_api_failure_modes.py` (24 tests) puts a real service through bad parameters, a service with nothing indexed, reloads that fail or find nothing (the old index stays), queries answered while reloads happen, the token and identity gates and what `/stats` must not reveal. The new workflow "Simulation bench" runs them on their own and a job measures the coverage with a floor that must not go down.
@@ -11,6 +14,8 @@ All notable changes to this project are documented here.
 - **A corpus bundle can carry a detached release signature, checked with a public key only:** `serve --bundle FILE --bundle-public-key KEY` (or `HYDRA_UMC_DOCS_QA_BUNDLE_PUBLIC_KEY`) verifies `FILE.sha256` and `FILE.sig` (the `sha256sum` line and the base64 Ed25519 signature of the exact bytes, the format of the signed release assets of the family) over the same bytes it then loads, so the service never holds a key that can sign. With a key the signature is always required: a missing, altered or foreign signature refuses the bundle. The verification is the reference algorithm of RFC 8032 with the standard library alone. `verify-bundle FILE --public-key KEY` prints `VERIFY=PASS` or `VERIFY=FAIL` without starting a service.
 - **Only a signed corpus is loaded by default, with an explicit local fallback:** `HYDRA_UMC_DOCS_QA_REQUIRE_SIGNED_CORPUS=0` is the same switch as `--allow-unsigned-bundle`; `--bundle-fallback-local` (with `--docs` or `--corpus`) turns a refused bundle at startup into a `WARNING` and an index of the local documents, shown as `bundleSigned: false` in `GET /stats`. Off unless asked for.
 - **The bundle is the same bytes for the same documents and release:** `tests/test_signed_corpus.py` (11 tests, signatures made with a throw-away key and the RFC 8032 vector) builds it in two directories under two hash seeds and compares the bytes, and checks a valid, an altered, a missing, a malformed and a foreign-key signature.
+
+- Build version synchronized with `hydra-umc.project.json` and the repository-native version source.
 
 ## [0.1.9] - PDF documents, embedding similarity and more tests
 
