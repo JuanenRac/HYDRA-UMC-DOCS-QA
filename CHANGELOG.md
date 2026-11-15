@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Simulation of a disk that goes wrong:** a new bench file, `tests/test_disk_faults_simulation.py` (3 tests, run by the simulation workflow), puts the real loaders under a service on a loopback port while the files under it fail on a schedule drawn from a fixed seed: a document that vanishes, one overwritten with bytes that are not text, one emptied or cut off, all documents lost at once, and a corpus bundle that is altered, cut in half, not JSON or removed. The service keeps answering from the index it has, `/stats` names what could not be read and why, a question never gets a 500, and the next reload takes the documents or the new release back. The evidence level is `simulator`; a run on the CM5 with its real disk and real documents stays pending.
+
 
 ## [0.2.0]
 

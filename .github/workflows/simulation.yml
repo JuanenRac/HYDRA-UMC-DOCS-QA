@@ -4,7 +4,7 @@
 # GPL-3.0-or-later - see LICENSE
 #
 # Runs the real service on a loopback port against what goes wrong around it: documents that change or vanish while it runs, reloads that fail or
-# find nothing, bad parameters, tokens of the wrong kind and clients that hammer it from several threads. Nothing leaves the runner. A second job
+# find nothing, a disk that fails on a schedule drawn from a fixed seed (a document that vanishes, bytes that are not text, a file cut off or emptied, a corpus bundle altered, cut or removed), bad parameters, tokens of the wrong kind and clients that hammer it from several threads. Nothing leaves the runner. A second job
 # measures the coverage of the program with a floor that must not go down. It runs on every push and pull request and by hand.
 # =============================================================================
 name: Simulation bench
@@ -36,7 +36,7 @@ jobs:
       - name: Run the failure scenarios
         env:
           PYTHONDONTWRITEBYTECODE: "1"
-        run: python -m pytest -q tests/test_api_failure_modes.py tests/test_server_identity_edges.py tests/test_api.py tests/test_hardening.py
+        run: python -m pytest -q tests/test_api_failure_modes.py tests/test_server_identity_edges.py tests/test_api.py tests/test_hardening.py tests/test_disk_faults_simulation.py
 
   coverage:
     name: Coverage floor of the program
