@@ -104,8 +104,8 @@ def ingest_markdown_text(text: str, *, source: str) -> list[DocChunk]:
     heading = ""
     body_lines: list[str] = []
     # a line like
-    # "# Shell comment" inside a ```sh fenced block used to be read as a
-    # real heading, wrongly splitting the section it lives in. `fence`
+    # "# Shell comment" inside a ```sh fenced block must not be read as a
+    # real heading, which would wrongly split the section it lives in. `fence`
     # holds the exact marker (backticks or tildes, with its real length)
     # that opened the block currently open, or None outside one - per
     # CommonMark, only a line starting with the SAME character repeated

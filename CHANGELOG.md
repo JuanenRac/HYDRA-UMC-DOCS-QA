@@ -4,6 +4,7 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **Comments describe what the code does, not what it used to do:** docstrings and notes in the source and the tests say the present behaviour and the reason for it. Comments only: no behaviour changes.
 - **The SDK pin and the shared tools are up to date:** the SDK dependency names the newest release tag, and the shared tools are the canonical copies again.
 - **More tests of the signed-token check and of the service under failures, and a simulation bench with a coverage floor:** `tests/test_server_identity_edges.py` (44 tests) goes through every refusal of the signed-token check (missing, oversized, mangled, wrong algorithm, wrong key, changed after signing, expired, not yet valid, issued in the future, no user, unknown role), the decision on a request for every method and role, the health probe against a real loopback socket and a seeded set of damaged tokens that must never be accepted. `tests/test_api_failure_modes.py` (24 tests) puts a real service through bad parameters, a service with nothing indexed, reloads that fail or find nothing (the old index stays), queries answered while reloads happen, the token and identity gates and what `/stats` must not reveal. The new workflow "Simulation bench" runs them on their own and a job measures the coverage with a floor that must not go down.
 

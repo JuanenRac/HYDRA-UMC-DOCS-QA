@@ -14,10 +14,10 @@ iterating on phrasing) against the same, unchanged corpus.
 
 Real, stdlib-only persistence: JSON, matching this project's own
 stdlib-only convention (no numpy/sqlite dependency needed for a handful
-of Python dataclasses and dicts of floats). It used to be `pickle`, but
+of Python dataclasses and dicts of floats). It is not `pickle`, because
 loading a pickle executes whatever the file tells it to, and the cache sits
 in the user's home directory where any other process of the same user can
-write: a planted `.pkl` ran code the next time `query` was used. A JSON file
+write: a planted `.pkl` would run code the next time `query` was used. A JSON file
 can only ever be data, and it is validated field by field before use. The
 cache key is a real
 content fingerprint - the resolved path, size and mtime of every
