@@ -23,7 +23,7 @@
 # directory-recursion support (expand_doc_paths()) to pick up
 # README.md, CHANGELOG.md and docs/CLI_REFERENCE.md together.
 
-FROM python:3.12-slim
+FROM python:3.15-slim
 
 WORKDIR /app
 COPY pyproject.toml README.md CHANGELOG.md LICENSE.md ./
