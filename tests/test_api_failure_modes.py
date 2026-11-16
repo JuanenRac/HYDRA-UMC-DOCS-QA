@@ -202,6 +202,17 @@ def test_reload_of_a_service_started_without_a_document_list_is_a_conflict(tmp_p
         assert "read again" in body["error"]
 
 
+def test_the_stats_cut_the_folders_out_of_the_last_reload_error(tmp_path: Path) -> None:
+    with serving([_manual(tmp_path)]) as (base, server):
+        server.last_reload_error = "OSError: [Errno 2] No such file or directory: '/srv/hydra/docs/manual.md' and/or C:\\secret\\folder\\worse.md"
+        status, body = _call(f"{base}/stats")
+        assert status == 200
+        assert body["lastReloadError"] == "OSError: [Errno 2] No such file or directory: 'manual.md' and/or worse.md"
+        assert "srv" not in json.dumps(body) and "secret" not in json.dumps(body)
+        server.last_reload_error = None
+        assert _call(f"{base}/stats")[1]["lastReloadError"] is None
+
+
 def test_a_reload_that_raises_keeps_the_old_index_and_says_why(tmp_path: Path) -> None:
     doc = _manual(tmp_path)
     state = {"fail": False}
