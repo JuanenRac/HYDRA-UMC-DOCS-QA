@@ -80,6 +80,14 @@ def _finish(
     return index, ingested_sources, rejected_descriptions
 
 
+_FOLDERS = re.compile(r"(?<![\w.])(?:[A-Za-z]:)?[\\/](?:[^\s'\"\\/]+[\\/])*([^\s'\"\\/:]+)")
+
+
+def _without_folders(text: str | None) -> str | None:
+    """The text with every path in it cut down to the name of its file (`/srv/docs/a.md` -> `a.md`); words that merely contain a slash (`and/or`) stay."""
+    return None if text is None else _FOLDERS.sub(r"\1", text)
+
+
 def _write_json(handler: BaseHTTPRequestHandler, status: int, payload: object) -> None:
     def default(o: object) -> object:
         if hasattr(o, "__dataclass_fields__"):
@@ -158,7 +166,8 @@ class Handler(HealthRouteMixin, MetricsHandlerMixin, BaseHTTPRequestHandler):
                 "bundleSigned": server.bundle_signed,
                 "reloadable": server.loader is not None,
                 "reloads": server.reloads,
-                "lastReloadError": server.last_reload_error,
+                # the error of a reload names the file it could not read: the name stays, the folders of the server disk do not
+                "lastReloadError": _without_folders(server.last_reload_error),
             })
         else:
             _write_error(self, 404, "not found")
