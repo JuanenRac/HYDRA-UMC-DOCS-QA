@@ -192,6 +192,8 @@ $ curl -s -w '\nHTTP:%{http_code}\n' http://127.0.0.1:8110/nope
 HTTP:404
 ```
 
+`serve --stats-auth` (needs `--token-file`) makes `GET /stats` answer only to a caller that sends the bearer token; it is off by default because the health probe of the manifest reads `/stats` without one, so turn it on only where the probe carries the token.
+
 ### `catalog --mcu-protocol FILE [--urtc-tools FILE] --out DIR`
 
 Writes the error codes of the controller and the tool profiles of URTC as Markdown documents, one section per code or tool, so that the normal ingestion indexes them and an answer can cite `source#section@sha256`. `--mcu-protocol` is the `protocol.py` of the controller bridge (its `STATUS_*` and `VERIFY_FAIL_REASON_*` codes become `mcu-error-codes.md`); `--urtc-tools` is the `spec/tools.json` of URTC (`urtc-tool-profiles.md`). Both files are only read. The meaning of each controller code is written in the catalog; a code that the source defines and the catalog does not know is listed with a line saying that no description was written for it.
