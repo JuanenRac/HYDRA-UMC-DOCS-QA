@@ -154,8 +154,8 @@ class Handler(HealthRouteMixin, MetricsHandlerMixin, BaseHTTPRequestHandler):
                 return
             self._handle_error()
         elif path == "/stats":
-            if self.server.identity_key is not None and not authorized(self, self.server.token, self.server.identity_key):
-                reject(self)  # with the identity of HYDRA-UMC-SERVER on, not even the health path is open
+            if (self.server.identity_key is not None or self.server.stats_auth) and not authorized(self, self.server.token, self.server.identity_key):
+                reject(self)  # with the identity of HYDRA-UMC-SERVER on, or --stats-auth, not even the health path is open
                 return
             # the health path of the manifest: open, and numbers and file names only
             server = self.server
@@ -264,6 +264,7 @@ class Handler(HealthRouteMixin, MetricsHandlerMixin, BaseHTTPRequestHandler):
 
 class DocsQaServer(ThreadingHTTPServer):
     health_open: bool = False  # GET /health answers only when the operator opens it (health_route.py)
+    stats_auth: bool = False  # GET /stats needs the bearer token too (--stats-auth); off by default, the health path of the manifest is open
     identity_key: bytes | None = None  # the signing key of HYDRA-UMC-SERVER, when the operator turned its identity on (server_identity.py)
     def __init__(
         self,

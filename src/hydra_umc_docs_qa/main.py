@@ -152,6 +152,7 @@ def _run_serve(
     docs: list[Path],
     *,
     health_open: bool = False,
+    stats_auth: bool = False,
     corpus: Path | None = None,
     scorer: str = "tfidf",
     stem: bool = False,
@@ -171,6 +172,8 @@ def _run_serve(
     try:
         token = load_token(token_file)
         identity_key = identity_key_from(identity_key_file)
+        if stats_auth and not token and identity_key is None:
+            raise ValueError("--stats-auth needs a token to ask for: give --token-file")
         problem = bind_problem(addr, token) if identity_key is None else None
         if problem:
             print(f"error: {problem}", file=sys.stderr)
@@ -233,6 +236,7 @@ def _run_serve(
         release=getattr(loader, "release", None), bundle_signed=getattr(loader, "signed", False),
     )
     server.identity_key = identity_key
+    server.stats_auth = stats_auth
     print(f"[docs-qa] HTTP API listening on {addr}:{port}")
     print("[docs-qa] GET /query?q=...&top_k=N, GET /error?code=..., GET /stats" + (", POST /reload (and SIGHUP)" if token or identity_key is not None else "") + ("; tokens of HYDRA-UMC-SERVER accepted, nothing is open" if identity_key is not None else ""))
     if not token and identity_key is None:
@@ -363,6 +367,10 @@ def build_parser() -> argparse.ArgumentParser:
              "The first load at startup never compares.",
     )
     serve_parser.add_argument(
+        "--stats-auth", action="store_true", dest="stats_auth",
+        help="GET /stats also needs the bearer token (needs --token-file). Off by default: /stats is the open health path of the manifest, so a probe that reads it must send the token when this is on.",
+    )
+    serve_parser.add_argument(
         "--bundle-fallback-local", action="store_true", dest="bundle_fallback_local",
         help="With --bundle and --docs/--corpus: when the bundle is refused at startup, say so in a WARNING and index those local documents instead of stopping. Off by default.",
     )
@@ -473,7 +481,7 @@ def main(argv: list[str] | None = None) -> int:
             bundle_public_key=args.bundle_public_key or os.environ.get(PUBLIC_KEY_ENV) or None,
             allow_bundle_downgrade=args.allow_bundle_downgrade,
             bundle_fallback_local=args.bundle_fallback_local and (args.docs is not None or args.corpus is not None),
-            health_open=args.health_open, identity_key_file=args.identity_key_file,
+            health_open=args.health_open, stats_auth=args.stats_auth, identity_key_file=args.identity_key_file,
             embedding=_embedding_from(args),
         )
     if args.command == "catalog":
