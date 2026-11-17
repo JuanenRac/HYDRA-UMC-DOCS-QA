@@ -55,11 +55,21 @@ def build_corpus_index(
     return _finish(chunks, list(refused) + list(rejected), scorer, stem, heading_boost)
 
 
+_RELEASE_NUMBERS = re.compile(r"[0-9]+")
+
+
+def release_order(release: str) -> tuple[int, ...]:
+    """The numbers of a release such as 0.3.1 (a suffix after - or + is left out), to tell an older bundle from a newer one."""
+    return tuple(int(part) for part in _RELEASE_NUMBERS.findall(re.split(r"[-+]", release, maxsplit=1)[0]))
+
+
 class BundleLoader:
     """Loads the index from a corpus bundle (bundle.py); called again on a reload, which also picks up the release of the new file."""
 
-    def __init__(self, path: Path, key: bytes | None, allow_unsigned: bool, public_key: bytes | None = None) -> None:
+    def __init__(self, path: Path, key: bytes | None, allow_unsigned: bool, public_key: bytes | None = None, allow_downgrade: bool = False) -> None:
         self.path, self.key, self.allow_unsigned, self.public_key = path, key, allow_unsigned, public_key
+        # a reload may go back to an older release only when the operator said so (--allow-bundle-downgrade); the first load never compares
+        self.allow_downgrade = allow_downgrade
         self.release: str | None = None
         self.signed = False
 
@@ -189,7 +199,7 @@ class Handler(HealthRouteMixin, MetricsHandlerMixin, BaseHTTPRequestHandler):
             return
         ok, message = self.server.reload()
         index = self.server.index
-        _write_json(self, 200 if ok else 500, {
+        _write_json(self, 200 if ok else (409 if self.server.last_reload_conflict else 500), {
             "reloaded": ok,
             "error": None if ok else message,
             "chunks": len(index.chunks) if index is not None else 0,
@@ -284,6 +294,7 @@ class DocsQaServer(ThreadingHTTPServer):
         self.built_at_ms = int(time.time() * 1000)
         self.reloads = 0
         self.last_reload_error: str | None = None
+        self.last_reload_conflict = False  # the last reload was refused because it would go back to an older release
         self._reload_lock = threading.Lock()
 
     def reload(self) -> tuple[bool, str]:
@@ -301,6 +312,13 @@ class DocsQaServer(ThreadingHTTPServer):
                 self.last_reload_error = "no document could be ingested: the previous index is kept"
                 self.rejected_descriptions = rejected
                 return False, self.last_reload_error
+            if isinstance(self.loader, BundleLoader) and not self.loader.allow_downgrade and self.release and self.loader.release:
+                if release_order(self.loader.release) < release_order(self.release):
+                    self.last_reload_error = (f"the bundle is release {self.loader.release}, older than the {self.release} that is loaded: "
+                                              "the loaded index is kept (--allow-bundle-downgrade lets a reload go back)")
+                    self.last_reload_conflict = True
+                    return False, self.last_reload_error
+            self.last_reload_conflict = False
             self.index, self.ingested_sources, self.rejected_descriptions = index, sources, rejected
             self.built_at_ms = int(time.time() * 1000)
             if isinstance(self.loader, BundleLoader):
