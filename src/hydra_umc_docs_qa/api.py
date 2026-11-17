@@ -237,14 +237,19 @@ class Handler(HealthRouteMixin, MetricsHandlerMixin, BaseHTTPRequestHandler):
         ok, reason = answerable(results, min_score=min_score, min_coverage=min_coverage)
         if not ok and results:
             # sections that only share a word with the question are not handed on as if they answered it
-            _write_json(self, 200, {"question": params["q"], "answerable": False, "reason": reason, "results": []})
+            _write_json(self, 200, {"question": params["q"], "answerable": False, "reason": reason, "results": [], "corpus": self._corpus()})
             return
         payload = [{**asdict(r), "citation": r.chunk.citation} for r in results]
         if params.get("extractive") in ("1", "true"):
             # the sentence of each passage that best answers the question (a piece of the passage, nothing generated)
             for item, r in zip(payload, results, strict=False):
                 item["answer"] = best_sentence(r.chunk.text, params["q"])
-        _write_json(self, 200, {"question": params["q"], "answerable": ok, "reason": reason, "results": payload})
+        _write_json(self, 200, {"question": params["q"], "answerable": ok, "reason": reason, "results": payload, "corpus": self._corpus()})
+
+    def _corpus(self) -> dict:
+        """Which corpus answered: the release of the bundle (None for an index built from documents), whether it was signed and when it was built."""
+        server = self.server
+        return {"release": server.release, "signed": bool(server.bundle_signed), "builtAtMs": server.built_at_ms}
 
 
 class DocsQaServer(ThreadingHTTPServer):
