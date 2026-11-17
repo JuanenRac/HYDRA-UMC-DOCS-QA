@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A reload no longer goes back to an older corpus release:** `POST /reload` of a service started from a bundle refuses a bundle whose release is older than the one loaded (`409`, the loaded index is kept and `lastReloadError` says so), so documentation that was corrected does not return by replacing the file. `serve --allow-bundle-downgrade` lets a reload go back on purpose; the load at startup never compares.
+
 - **The answer of `/query` says which corpus answered:** the response carries `corpus` with `release` (null for an index built from documents), `signed` and `builtAtMs`, so a client can show the version an answer comes from. The field is new and the others are unchanged. The text of the bundle module no longer says that an asymmetric signature is missing: the detached Ed25519 signature has been checked for a while.
 
 - **`/stats` no longer shows the folders of the server in the last reload error:** the error keeps the name of the file it could not read and drops the path, as the list of rejected documents already did. A test with a Unix and a Windows path.

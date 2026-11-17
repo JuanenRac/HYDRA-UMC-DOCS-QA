@@ -164,6 +164,7 @@ def _run_serve(
     allow_unsigned_bundle: bool = False,
     bundle_public_key: str | None = None,
     bundle_fallback_local: bool = False,
+    allow_bundle_downgrade: bool = False,
     identity_key_file: str | None = None,
     embedding: tuple[str, float, float] | None = None,
 ) -> int:
@@ -180,7 +181,7 @@ def _run_serve(
         loader: Any
         if bundle is not None:
             public = read_public_key(bundle_public_key) if bundle_public_key else None
-            bundle_loader = BundleLoader(bundle, read_key(bundle_key_file) if bundle_key_file else None, allow_unsigned_bundle, public)
+            bundle_loader = BundleLoader(bundle, read_key(bundle_key_file) if bundle_key_file else None, allow_unsigned_bundle, public, allow_bundle_downgrade)
             loader = bundle_loader
             if bundle_fallback_local:
                 try:
@@ -357,6 +358,11 @@ def build_parser() -> argparse.ArgumentParser:
              "must verify over its exact bytes before it is loaded (or set HYDRA_UMC_DOCS_QA_BUNDLE_PUBLIC_KEY). The service never holds a private key.",
     )
     serve_parser.add_argument(
+        "--allow-bundle-downgrade", action="store_true", dest="allow_bundle_downgrade",
+        help="Let POST /reload load a bundle of an older release than the one loaded. Off by default: such a reload is refused with 409 and the loaded index is kept. "
+             "The first load at startup never compares.",
+    )
+    serve_parser.add_argument(
         "--bundle-fallback-local", action="store_true", dest="bundle_fallback_local",
         help="With --bundle and --docs/--corpus: when the bundle is refused at startup, say so in a WARNING and index those local documents instead of stopping. Off by default.",
     )
@@ -465,6 +471,7 @@ def main(argv: list[str] | None = None) -> int:
             bundle=args.bundle, bundle_key_file=args.bundle_key_file,
             allow_unsigned_bundle=args.allow_unsigned_bundle or os.environ.get(REQUIRE_SIGNED_ENV, "").strip().lower() in ("0", "false", "no", "off"),
             bundle_public_key=args.bundle_public_key or os.environ.get(PUBLIC_KEY_ENV) or None,
+            allow_bundle_downgrade=args.allow_bundle_downgrade,
             bundle_fallback_local=args.bundle_fallback_local and (args.docs is not None or args.corpus is not None),
             health_open=args.health_open, identity_key_file=args.identity_key_file,
             embedding=_embedding_from(args),
