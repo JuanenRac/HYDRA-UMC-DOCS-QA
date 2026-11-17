@@ -123,3 +123,15 @@ def test_not_found(tmp_path: Path) -> None:
     with running_server([doc]) as base:
         status, body = _get(f"{base}/nope")
         assert status == 404
+
+
+def test_the_answer_says_which_corpus_answered(tmp_path: Path) -> None:
+    doc = _write_manual(tmp_path)
+    with running_server([doc]) as base:
+        q = urllib.parse.quote("CAN bus termination")
+        _, body = _get(f"{base}/query?q={q}")
+        assert set(body["corpus"]) == {"release", "signed", "builtAtMs"}
+        assert body["corpus"]["release"] is None and body["corpus"]["signed"] is False
+        assert body["corpus"]["builtAtMs"] > 0
+        _, miss = _get(f"{base}/query?q={urllib.parse.quote('zzzzqqqq')}")
+        assert "corpus" in miss

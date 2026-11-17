@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **The answer of `/query` says which corpus answered:** the response carries `corpus` with `release` (null for an index built from documents), `signed` and `builtAtMs`, so a client can show the version an answer comes from. The field is new and the others are unchanged. The text of the bundle module no longer says that an asymmetric signature is missing: the detached Ed25519 signature has been checked for a while.
+
 - **`/stats` no longer shows the folders of the server in the last reload error:** the error keeps the name of the file it could not read and drops the path, as the list of rejected documents already did. A test with a Unix and a Windows path.
 - **Simulation of a disk that goes wrong:** a new bench file, `tests/test_disk_faults_simulation.py` (3 tests, run by the simulation workflow), puts the real loaders under a service on a loopback port while the files under it fail on a schedule drawn from a fixed seed: a document that vanishes, one overwritten with bytes that are not text, one emptied or cut off, all documents lost at once, and a corpus bundle that is altered, cut in half, not JSON or removed. The service keeps answering from the index it has, `/stats` names what could not be read and why, a question never gets a 500, and the next reload takes the documents or the new release back. The evidence level is `simulator`; a run on the CM5 with its real disk and real documents stays pending.
 

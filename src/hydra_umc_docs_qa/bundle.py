@@ -15,8 +15,9 @@ itself, a `digest` (SHA-256 of everything else, written in a canonical form) and
 (HMAC-SHA256 of the digest with that key). Building is deterministic: the same documents and release give the same file.
 
 Loading checks the digest always, and the signature against the key the service was given. A bundle that is not signed, or whose signature
-cannot be checked, is refused unless the service was explicitly told to accept unsigned bundles (off by default). Signing with an asymmetric
-key, so that the service holds only a public key, is not implemented here: HMAC uses the standard library only.
+cannot be checked, is refused unless the service was explicitly told to accept unsigned bundles (off by default). The signature
+inside the bundle is an HMAC; an asymmetric signature, so that the service holds only a public key, is a detached file (`FILE.sig`, Ed25519)
+checked by `corpus_signature.verify_detached`.
 """
 from __future__ import annotations
 
