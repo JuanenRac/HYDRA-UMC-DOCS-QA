@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+## [0.2.1]
+
 - **A reload no longer goes back to an older corpus release:** `POST /reload` of a service started from a bundle refuses a bundle whose release is older than the one loaded (`409`, the loaded index is kept and `lastReloadError` says so), so documentation that was corrected does not return by replacing the file. `serve --allow-bundle-downgrade` lets a reload go back on purpose; the load at startup never compares.
 
 - **`serve --stats-auth` asks for the token on `GET /stats`:** off by default (the health probe of the manifest reads `/stats` without one); with it on, and a token file given, `/stats` answers `401` to a caller that does not send the bearer token. The service refuses to start with the option and no token to ask for.
@@ -13,6 +15,7 @@ All notable changes to this project are documented here.
 - **`/stats` no longer shows the folders of the server in the last reload error:** the error keeps the name of the file it could not read and drops the path, as the list of rejected documents already did. A test with a Unix and a Windows path.
 - **Simulation of a disk that goes wrong:** a new bench file, `tests/test_disk_faults_simulation.py` (3 tests, run by the simulation workflow), puts the real loaders under a service on a loopback port while the files under it fail on a schedule drawn from a fixed seed: a document that vanishes, one overwritten with bytes that are not text, one emptied or cut off, all documents lost at once, and a corpus bundle that is altered, cut in half, not JSON or removed. The service keeps answering from the index it has, `/stats` names what could not be read and why, a question never gets a 500, and the next reload takes the documents or the new release back. The evidence level is `simulator`; a run on the CM5 with its real disk and real documents stays pending.
 
+- Build version synchronized with `hydra-umc.project.json` and the repository-native version source.
 
 ## [0.2.0]
 
