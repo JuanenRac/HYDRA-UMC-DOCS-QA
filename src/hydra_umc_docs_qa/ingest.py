@@ -182,7 +182,7 @@ def ingest_markdown_file(path: Path) -> list[DocChunk]:
     if path.suffix.lower() == PDF_SUFFIX:
         digest = hashlib.sha256(raw).hexdigest()
         return [replace(chunk, sha256=digest) for chunk in ingest_pdf_bytes(raw, source=canonical_source(path))]
-    text = _CONTROL_CHARS_RE.sub("", raw.decode("utf-8"))
+    text = _CONTROL_CHARS_RE.sub("", raw.decode("utf-8-sig"))   # a byte-order mark would hide the first heading
     digest = hashlib.sha256(raw).hexdigest()
     return [replace(chunk, sha256=digest) for chunk in ingest_markdown_text(text, source=canonical_source(path))]
 
