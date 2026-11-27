@@ -4,6 +4,10 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A corpus manifest in another encoding is refused with its reason:** it ended the command with an unhandled error.
+
+- **A document saved with a byte-order mark keeps its first heading:** the mark that some Windows editors add stayed in front of the first line, so its heading was indexed as plain text and could not be cited.
+
 ## [0.2.1]
 
 - **A reload no longer goes back to an older corpus release:** `POST /reload` of a service started from a bundle refuses a bundle whose release is older than the one loaded (`409`, the loaded index is kept and `lastReloadError` says so), so documentation that was corrected does not return by replacing the file. `serve --allow-bundle-downgrade` lets a reload go back on purpose; the load at startup never compares.
