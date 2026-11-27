@@ -86,7 +86,7 @@ def load_manifest(path: str | Path) -> CorpusManifest:
         raw = json.loads(target.read_text(encoding="utf-8"), parse_constant=lambda name: (_ for _ in ()).throw(CorpusError(f"{name} is not valid JSON")))
     except OSError as error:
         raise CorpusError(f"cannot read the corpus manifest: {error}") from error
-    except json.JSONDecodeError as error:
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
         raise CorpusError(f"the corpus manifest is not JSON: {error}") from error
     return parse_manifest(raw)
 

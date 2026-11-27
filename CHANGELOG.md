@@ -4,6 +4,8 @@ All notable changes to this project are documented here.
 
 ## [Unreleased]
 
+- **A corpus manifest in another encoding is refused with its reason:** it ended the command with an unhandled error.
+
 - **A document saved with a byte-order mark keeps its first heading:** the mark that some Windows editors add stayed in front of the first line, so its heading was indexed as plain text and could not be cited.
 
 ## [0.2.1]
